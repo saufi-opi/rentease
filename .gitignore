@@ -1,0 +1,27 @@
+.vscode
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.log
+.venv/
+venv/
+env/
+
+# OS
+.DS_Store
+Thumbs.db
+
+/docs
+
+# Celery
+celerybeat-schedule*
