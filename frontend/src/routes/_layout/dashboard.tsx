@@ -7,6 +7,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import useAuth from "@/hooks/useAuth"
 import { UserControllerService, type UpdateProfileRequest } from "@/client"
 import useCustomToast from "@/hooks/useCustomToast"
+import { setAccessToken } from "@/lib/axios"
 
 export const Route = createFileRoute("/_layout/dashboard")({
   component: ProfilePage,
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/_layout/dashboard")({
 })
 
 function ProfilePage() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const queryClient = useQueryClient()
   
@@ -57,10 +58,7 @@ function ProfilePage() {
     mutationFn: () => UserControllerService.deleteProfile(),
     onSuccess: () => {
       showSuccessToast("Account deleted successfully")
-      // Logout and redirect to home
-      localStorage.removeItem("was_logged_in")
-      queryClient.clear()
-      window.location.href = "/"
+      logout()
     },
     onError: (error: any) => {
       showErrorToast(error.message || "Failed to delete account")
