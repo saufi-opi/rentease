@@ -69,7 +69,7 @@ function BookingsPage() {
   }
 
   return (
-    <div className="container mx-auto py-10 px-4 space-y-6">
+    <div className="space-y-6">
       <Card className="border border-border shadow-sm overflow-hidden">
         <CardHeader className="border-b border-border bg-muted/30 pb-4">
           <CardTitle className="text-xl font-bold text-primary">Rental History</CardTitle>
@@ -85,7 +85,7 @@ function BookingsPage() {
                 className="flex gap-5 rounded-xl border border-border bg-background p-5 shadow-sm transition-all hover:shadow-md"
               >
                 {/* Car Image */}
-                <div className="h-28 w-40 flex-shrink-0 overflow-hidden rounded-lg shadow-inner bg-muted">
+                <div className="h-28 w-40 shrink-0 overflow-hidden rounded-lg shadow-inner bg-muted">
                   <img 
                     src={booking.image} 
                     alt={booking.carName} 

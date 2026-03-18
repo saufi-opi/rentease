@@ -4,6 +4,7 @@ import {
   redirect,
 } from "@tanstack/react-router"
 import { AppHeader } from "@/components/Layout/AppHeader"
+import { ProfileSidebar } from "@/components/Layout/ProfileSidebar"
 import { isLoggedIn } from "@/hooks/useAuth"
 
 export const Route = createFileRoute("/_layout")({
@@ -22,11 +23,14 @@ export const Route = createFileRoute("/_layout")({
 
 function Layout() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-[#f8f9fa]">
       <AppHeader />
-      <main className="flex-1">
-        <Outlet />
-      </main>
+      <div className="container mx-auto flex flex-col md:flex-row flex-1 py-10 px-4 md:px-6 gap-8">
+        <ProfileSidebar />
+        <main className="flex-1 w-full min-w-0">
+          <Outlet />
+        </main>
+      </div>
     </div>
   )
 }

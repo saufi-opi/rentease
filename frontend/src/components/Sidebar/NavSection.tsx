@@ -14,7 +14,7 @@ interface NavSectionProps {
 export function NavSection({ label, items }: NavSectionProps) {
   return (
     <SidebarGroup className="px-2 group-data-[collapsible=icon]:px-0">
-      <SidebarGroupLabel className="px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 mb-2">
+      <SidebarGroupLabel className="px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
         {label}
       </SidebarGroupLabel>
       <SidebarGroupContent>

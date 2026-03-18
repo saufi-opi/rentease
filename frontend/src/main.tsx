@@ -7,8 +7,13 @@ import "./index.css"
 import "./lib/axios" // Import to execute the Axios setup side-effects
 import { queryClient } from "./lib/react-query"
 import { routeTree } from "./routeTree.gen"
+import { NotFound } from "./components/common/NotFound"
 
-const router = createRouter({ routeTree, defaultPreload: "intent" })
+const router = createRouter({ 
+  routeTree, 
+  defaultPreload: "intent",
+  defaultNotFoundComponent: NotFound
+})
 declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router

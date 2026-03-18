@@ -42,7 +42,7 @@ export const Route = createFileRoute("/login")({
   beforeLoad: async () => {
     if (isLoggedIn()) {
       throw redirect({
-        to: "/dashboard",
+        to: "/profile",
       })
     }
   },
@@ -73,7 +73,7 @@ function Login() {
     if (loginMutation.isPending) return
     loginMutation.mutate(data, {
       onSuccess: () => {
-        navigate({ to: search.next || "/dashboard" })
+        navigate({ to: search.next || "/profile" })
       }
     })
   }

@@ -16,6 +16,7 @@ import {
 import useAuth from "@/hooks/useAuth"
 import { getInitials } from "@/utils"
 import { Logo } from "@/components/common/Logo"
+import { Navbar } from "@/components/Layout/Navbar"
 
 export function AppHeader() {
   const { user, logout, isAdmin, isManagement } = useAuth()
@@ -44,6 +45,9 @@ export function AppHeader() {
             <Logo iconSize="h-6" fontSize="text-xl" />
           </Link>
         </div>
+
+        {/* Main Navigation */}
+        <Navbar />
 
         <div className="flex items-center gap-4">
           {user ? (
@@ -81,7 +85,7 @@ export function AppHeader() {
                     <DropdownMenuSeparator />
                   </>
                 )}
-                <Link to="/dashboard">
+                <Link to="/profile">
                   <DropdownMenuItem className="cursor-pointer">
                     <UserIcon className="mr-2 h-4 w-4" />
                     <span>My Profile</span>

@@ -32,9 +32,8 @@ export function NavItem({ item }: NavItemProps) {
   const router = useRouterState()
   const currentPath = router.location.pathname
 
-  const checkIsActive = (path: string, exact?: boolean) => {
-    if (path === "/" || exact) return currentPath === path
-    return currentPath === path || currentPath.startsWith(`${path}/`)
+  const checkIsActive = (path: string, _exact?: boolean) => {
+    return currentPath === path || currentPath === `${path}/`
   }
 
   const handleMenuClick = () => {

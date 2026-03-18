@@ -1,18 +1,19 @@
 import {
   createFileRoute,
+  notFound,
   Outlet,
   redirect,
 } from "@tanstack/react-router"
 import { AppHeader } from "@/components/Layout/AppHeader"
-import AppSidebar from "@/components/Sidebar/AppSidebar"
+import AppSidebar from "@/components/Sidebar/AdminSidebar"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { isLoggedIn } from "@/hooks/useAuth"
 import { queryClient } from "@/lib/react-query"
-import { UserResponse } from "@/client"
+import { UserControllerService } from "@/client"
 
 export const Route = createFileRoute("/admin/_layout")({
   component: Layout,
-  beforeLoad: ({ location }) => {
+  beforeLoad: async ({ location }) => {
     if (!isLoggedIn()) {
       throw redirect({
         to: "/login",
@@ -22,10 +23,22 @@ export const Route = createFileRoute("/admin/_layout")({
       })
     }
 
-    const currentUser = queryClient.getQueryData<UserResponse>(["currentUser"])
-    if (!currentUser?.roles?.includes("ADMIN")) {
+    try {
+      const currentUser = await queryClient.ensureQueryData({
+        queryKey: ["currentUser"],
+        queryFn: () => UserControllerService.getCurrentUser(),
+      })
+      const hasAccess = currentUser?.roles?.includes("ADMIN") || currentUser?.roles?.includes("MANAGEMENT")
+      if (!hasAccess) {
+        throw notFound()
+      }
+    } catch (error) {
+      // If fetching fails (e.g. token expired)
       throw redirect({
-        to: "/",
+        to: "/login",
+        search: {
+          next: location.pathname,
+        },
       })
     }
   },

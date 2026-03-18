@@ -8,8 +8,6 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { createFileRoute } from '@tanstack/react-router'
-
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
@@ -18,18 +16,12 @@ import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminLayoutRouteImport } from './routes/admin/_layout'
-import { Route as LayoutDashboardRouteImport } from './routes/_layout/dashboard'
+import { Route as LayoutProfileRouteImport } from './routes/_layout/profile'
+import { Route as LayoutFavouritesRouteImport } from './routes/_layout/favourites'
 import { Route as LayoutBookingsRouteImport } from './routes/_layout/bookings'
 import { Route as AdminLayoutDashboardRouteImport } from './routes/admin/_layout/dashboard'
 import { Route as AdminLayoutBookingsRouteImport } from './routes/admin/_layout/bookings'
 
-const AdminRouteImport = createFileRoute('/admin')()
-
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -63,9 +55,14 @@ const AdminLayoutRoute = AdminLayoutRouteImport.update({
   id: '/_layout',
   getParentRoute: () => AdminRoute,
 } as any)
-const LayoutDashboardRoute = LayoutDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const LayoutProfileRoute = LayoutProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutFavouritesRoute = LayoutFavouritesRouteImport.update({
+  id: '/favourites',
+  path: '/favourites',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutBookingsRoute = LayoutBookingsRouteImport.update({
@@ -90,7 +87,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/bookings': typeof LayoutBookingsRoute
-  '/dashboard': typeof LayoutDashboardRoute
+  '/favourites': typeof LayoutFavouritesRoute
+  '/profile': typeof LayoutProfileRoute
   '/admin': typeof AdminLayoutRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/admin/bookings': typeof AdminLayoutBookingsRoute
@@ -102,7 +100,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/bookings': typeof LayoutBookingsRoute
-  '/dashboard': typeof LayoutDashboardRoute
+  '/favourites': typeof LayoutFavouritesRoute
+  '/profile': typeof LayoutProfileRoute
   '/admin': typeof AdminIndexRoute
   '/admin/bookings': typeof AdminLayoutBookingsRoute
   '/admin/dashboard': typeof AdminLayoutDashboardRoute
@@ -115,8 +114,8 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/_layout/bookings': typeof LayoutBookingsRoute
-  '/_layout/dashboard': typeof LayoutDashboardRoute
-  '/admin': typeof AdminRouteWithChildren
+  '/_layout/favourites': typeof LayoutFavouritesRoute
+  '/_layout/profile': typeof LayoutProfileRoute
   '/admin/_layout': typeof AdminLayoutRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/admin/_layout/bookings': typeof AdminLayoutBookingsRoute
@@ -130,7 +129,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/bookings'
-    | '/dashboard'
+    | '/favourites'
+    | '/profile'
     | '/admin'
     | '/admin/'
     | '/admin/bookings'
@@ -142,7 +142,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/bookings'
-    | '/dashboard'
+    | '/favourites'
+    | '/profile'
     | '/admin'
     | '/admin/bookings'
     | '/admin/dashboard'
@@ -154,8 +155,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/_layout/bookings'
-    | '/_layout/dashboard'
-    | '/admin'
+    | '/_layout/favourites'
+    | '/_layout/profile'
     | '/admin/_layout'
     | '/admin/'
     | '/admin/_layout/bookings'
@@ -168,18 +169,10 @@ export interface RootRouteChildren {
   CarsRoute: typeof CarsRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
-  AdminRoute: typeof AdminRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -224,16 +217,23 @@ declare module '@tanstack/react-router' {
     }
     '/admin/_layout': {
       id: '/admin/_layout'
-      path: '/admin'
+      path: ''
       fullPath: '/admin'
       preLoaderRoute: typeof AdminLayoutRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/_layout/dashboard': {
-      id: '/_layout/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof LayoutDashboardRouteImport
+    '/_layout/profile': {
+      id: '/_layout/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof LayoutProfileRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/favourites': {
+      id: '/_layout/favourites'
+      path: '/favourites'
+      fullPath: '/favourites'
+      preLoaderRoute: typeof LayoutFavouritesRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/bookings': {
@@ -262,42 +262,18 @@ declare module '@tanstack/react-router' {
 
 interface LayoutRouteChildren {
   LayoutBookingsRoute: typeof LayoutBookingsRoute
-  LayoutDashboardRoute: typeof LayoutDashboardRoute
+  LayoutFavouritesRoute: typeof LayoutFavouritesRoute
+  LayoutProfileRoute: typeof LayoutProfileRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutBookingsRoute: LayoutBookingsRoute,
-  LayoutDashboardRoute: LayoutDashboardRoute,
+  LayoutFavouritesRoute: LayoutFavouritesRoute,
+  LayoutProfileRoute: LayoutProfileRoute,
 }
 
 const LayoutRouteWithChildren =
   LayoutRoute._addFileChildren(LayoutRouteChildren)
-
-interface AdminLayoutRouteChildren {
-  AdminLayoutBookingsRoute: typeof AdminLayoutBookingsRoute
-  AdminLayoutDashboardRoute: typeof AdminLayoutDashboardRoute
-}
-
-const AdminLayoutRouteChildren: AdminLayoutRouteChildren = {
-  AdminLayoutBookingsRoute: AdminLayoutBookingsRoute,
-  AdminLayoutDashboardRoute: AdminLayoutDashboardRoute,
-}
-
-const AdminLayoutRouteWithChildren = AdminLayoutRoute._addFileChildren(
-  AdminLayoutRouteChildren,
-)
-
-interface AdminRouteChildren {
-  AdminLayoutRoute: typeof AdminLayoutRouteWithChildren
-  AdminIndexRoute: typeof AdminIndexRoute
-}
-
-const AdminRouteChildren: AdminRouteChildren = {
-  AdminLayoutRoute: AdminLayoutRouteWithChildren,
-  AdminIndexRoute: AdminIndexRoute,
-}
-
-const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -305,7 +281,6 @@ const rootRouteChildren: RootRouteChildren = {
   CarsRoute: CarsRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
-  AdminRoute: AdminRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
