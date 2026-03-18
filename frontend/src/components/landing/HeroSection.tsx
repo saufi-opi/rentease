@@ -10,18 +10,30 @@ export function HeroSection() {
   const [dropoffDate, setDropoffDate] = useState("")
 
   return (
-    <section className="relative min-h-[600px] overflow-hidden">
-      {/* Background with gradient overlay */}
-      <div className="absolute inset-0 bg-linear-to-r from-primary/90 to-primary/70">
-        <motion.div 
-          initial={{ scale: 1.1 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-          className="absolute inset-0 bg-cover bg-center opacity-30"
-          style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=1920&q=80')"
-          }}
+    <section className="relative min-h-[700px] overflow-hidden bg-foreground">
+      {/* Conceptual Background with Pattern and Wave */}
+      <div className="absolute inset-0 z-0">
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 opacity-[0.05] pointer-events-none" 
+          style={{ 
+            backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
+            backgroundSize: '32px 32px' 
+          }} 
         />
+        
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-linear-to-br from-primary/20 via-transparent to-transparent" />
+
+        {/* The Wave Shape (Bottom) */}
+        <div className="absolute bottom-0 left-0 w-full leading-0 transform rotate-180">
+          <svg 
+            viewBox="0 0 1200 120" 
+            preserveAspectRatio="none" 
+            className="relative block w-full h-[100px] text-background fill-current"
+          >
+            <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"></path>
+          </svg>
+        </div>
       </div>
 
       <div className="container relative mx-auto px-4 py-20">
@@ -48,7 +60,7 @@ export function HeroSection() {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="mb-8 max-w-md text-lg opacity-90"
             >
-              Let&apos;s find a vehicle that fits your needs. Compare prices from top car rental companies.
+              Let&apos;s find a vehicle that fits your needs. Compare prices from top vehicle rental companies.
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -65,13 +77,13 @@ export function HeroSection() {
             </motion.div>
           </motion.div>
 
-          {/* Right side - Car images grid */}
+          {/* Right side - Vehicle images grid */}
           <div className="hidden grid-cols-2 gap-4 lg:grid">
             {[
-              { src: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&q=80", alt: "Sports car", delay: 0.3 },
-              { src: "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=400&q=80", alt: "Red sports car", delay: 0.4 },
-              { src: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=400&q=80", alt: "Classic car", delay: 0.5 },
-              { src: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&q=80", alt: "Luxury car", delay: 0.6 },
+              { src: "/assets/images/marketing/offer_suv.png", alt: "Adventure SUV", delay: 0.3 },
+              { src: "/assets/images/vehicles/silver_sportbike.png", alt: "Motorcycle", delay: 0.4 },
+              { src: "/assets/images/marketing/hero_bg.png", alt: "Premium super car", delay: 0.5 },
+              { src: "/assets/images/marketing/offer_weekend.png", alt: "Road trip SUV", delay: 0.6 },
             ].map((image, index) => (
               <motion.div 
                 key={index}

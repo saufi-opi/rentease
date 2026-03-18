@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
+import { Logo } from "@/components/common/Logo"
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -88,7 +89,7 @@ function Login() {
           className="relative p-12"
         >
           <img 
-            src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=600&q=80" 
+            src="/assets/images/marketing/auth_bg.png" 
             alt="Car rental illustration" 
             className="max-w-md rounded-2xl shadow-2xl opacity-90"
           />
@@ -122,8 +123,7 @@ function Login() {
         >
           {/* Logo */}
           <RouterLink to="/" className="mb-8 flex items-center justify-center gap-2 transition-transform hover:scale-105">
-            <img src="/assets/images/logo.png" alt="RentEase Logo" className="h-10 w-auto" />
-            <span className="text-3xl font-bold text-foreground">RentEase</span>
+            <Logo iconSize="h-6" fontSize="text-xl" />
           </RouterLink>
 
           <h1 className="mb-8 text-center text-2xl font-bold text-foreground">

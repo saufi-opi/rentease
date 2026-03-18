@@ -3,7 +3,6 @@ import { AppHeader } from "@/components/Layout/AppHeader"
 import { HeroSection } from "@/components/landing/HeroSection"
 import { PopularCarsSection } from "@/components/landing/PopularCarsSection"
 import { TrendingOffersSection } from "@/components/landing/TrendingOffersSection"
-import { ReferFriendSection } from "@/components/landing/ReferFriendSection"
 import { HowWeWorkSection } from "@/components/landing/HowWeWorkSection"
 import { WhyChooseUsSection } from "@/components/landing/WhyChooseUsSection"
 import { TestimonialsSection } from "@/components/landing/TestimonialsSection"
@@ -28,7 +27,6 @@ function LandingPage() {
       <HeroSection />
       <PopularCarsSection />
       <TrendingOffersSection />
-      <ReferFriendSection />
       <HowWeWorkSection />
       <WhyChooseUsSection />
       <TestimonialsSection />

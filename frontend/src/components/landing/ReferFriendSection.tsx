@@ -37,7 +37,7 @@ export function ReferFriendSection() {
             >
               <h2 className="mb-4 text-3xl font-bold text-foreground">Refer your friend</h2>
               <p className="mb-6 text-muted-foreground">
-                Refer a friend to RentEase and you both can earn Rs 300 ride credits when they complete their first rental. 
+                Refer a friend to RentEase and you both can earn RM 30 ride credits when they complete their first rental. 
                 Share your unique referral code with friends and family to start earning rewards today.
               </p>
               <div className="flex flex-wrap gap-4">

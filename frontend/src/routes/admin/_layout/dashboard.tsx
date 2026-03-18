@@ -18,7 +18,7 @@ function AdminDashboard() {
     { title: "Total Users", value: "1,248", icon: Users, color: "text-blue-600" },
     { title: "Active Fleet", value: "84", icon: Car, color: "text-emerald-600" },
     { title: "Today's Bookings", value: "12", icon: ClipboardList, color: "text-amber-600" },
-    { title: "Monthly Revenue", value: "₹ 4,25,000", icon: TrendingUp, color: "text-primary" },
+    { title: "Monthly Revenue", value: "RM 425,000", icon: TrendingUp, color: "text-primary" },
   ]
 
   return (

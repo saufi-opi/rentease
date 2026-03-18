@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import useAuth from "@/hooks/useAuth"
 import { getInitials } from "@/utils"
+import { Logo } from "@/components/common/Logo"
 
 export function AppHeader() {
   const { user, logout, isAdmin, isManagement } = useAuth()
@@ -40,14 +41,7 @@ export function AppHeader() {
           )}
           
           <Link to="/" className="flex items-center gap-2 transition-all hover:opacity-80">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-1"
-            >
-              <img src="/assets/images/logo.png" alt="RentEase Logo" className="h-8 w-auto" />
-              <span className="text-xl font-bold text-foreground">RentEase</span>
-            </motion.div>
+            <Logo iconSize="h-6" fontSize="text-xl" />
           </Link>
         </div>
 
@@ -104,13 +98,22 @@ export function AppHeader() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Link to="/login">
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button className="bg-primary text-primary-foreground font-bold transition-all duration-300 hover:bg-primary/90 hover:shadow-lg shadow-primary/20">
-                  Login / Signup
-                </Button>
-              </motion.div>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link to="/signup">
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button className="text-primary font-bold transition-all duration-300 rounded-full" variant="ghost" size="lg">
+                    Sign Up
+                  </Button>
+                </motion.div>
+              </Link>
+              <Link to="/login">
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button className="bg-primary text-primary-foreground font-bold transition-all duration-300 hover:bg-primary/90 hover:shadow-lg shadow-primary/20 rounded-full" size="lg">
+                    Sign In
+                  </Button>
+                </motion.div>
+              </Link>
+            </div>
           )}
         </div>
       </div>

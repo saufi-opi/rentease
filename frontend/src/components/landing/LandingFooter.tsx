@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router"
 import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react"
+import { Logo } from "@/components/common/Logo"
 
 export function LandingFooter() {
   return (
@@ -8,10 +9,9 @@ export function LandingFooter() {
         <div className="grid gap-8 md:grid-cols-4">
           {/* Brand */}
           <div>
-            <div className="mb-4 flex items-center gap-2">
-              <img src="/assets/images/logo.png" alt="RentEase Logo" className="h-6 w-auto" />
-              <span className="text-xl font-bold">RentEase</span>
-            </div>
+            <Link to="/" className="mb-4 inline-block transition-all hover:opacity-80">
+              <Logo iconSize="h-6" fontSize="text-xl text-primary" />
+            </Link>
             <p className="mb-4 text-sm text-background/70">
               Your trusted partner for car rentals. Discover freedom on wheels with our wide selection of vehicles.
             </p>
@@ -36,9 +36,9 @@ export function LandingFooter() {
             <h3 className="mb-4 font-semibold">Quick Links</h3>
             <ul className="space-y-2 text-sm text-background/70">
               <li><Link to="/" className="hover:text-primary">Home</Link></li>
-              <li><Link to="/about" className="hover:text-primary">About Us</Link></li>
+              <li><Link to="/" className="hover:text-primary">About Us</Link></li>
               <li><Link to="/cars" className="hover:text-primary">Browse Cars</Link></li>
-              <li><Link to="/contact" className="hover:text-primary">Contact</Link></li>
+              <li><Link to="/" className="hover:text-primary">Contact</Link></li>
             </ul>
           </div>
 
@@ -46,10 +46,10 @@ export function LandingFooter() {
           <div>
             <h3 className="mb-4 font-semibold">Support</h3>
             <ul className="space-y-2 text-sm text-background/70">
-              <li><Link to="/faq" className="hover:text-primary">FAQ</Link></li>
-              <li><Link to="/terms" className="hover:text-primary">Terms & Conditions</Link></li>
-              <li><Link to="/privacy" className="hover:text-primary">Privacy Policy</Link></li>
-              <li><Link to="/help" className="hover:text-primary">Help Center</Link></li>
+              <li><Link to="/" className="hover:text-primary">FAQ</Link></li>
+              <li><Link to="/" className="hover:text-primary">Terms & Conditions</Link></li>
+              <li><Link to="/" className="hover:text-primary">Privacy Policy</Link></li>
+              <li><Link to="/" className="hover:text-primary">Help Center</Link></li>
             </ul>
           </div>
 

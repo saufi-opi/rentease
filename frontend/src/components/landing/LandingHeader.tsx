@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
+import { Logo } from "@/components/common/Logo"
 
 export function LandingHeader() {
   return (
@@ -12,14 +13,7 @@ export function LandingHeader() {
     >
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2">
-          <motion.div 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-1"
-          >
-            <img src="/assets/images/logo.png" alt="RentEase Logo" className="h-8 w-auto" />
-            <span className="text-xl font-bold text-foreground">RentEase</span>
-          </motion.div>
+          <Logo iconSize="h-6" fontSize="text-xl" />
         </Link>
 
         <div className="flex items-center gap-3">

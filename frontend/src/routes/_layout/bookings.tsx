@@ -20,7 +20,7 @@ const bookings = [
   {
     id: 1,
     carName: "BMW M3 Sport",
-    image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=300&q=80",
+    image: "/assets/images/vehicles/grey_sport.png",
     status: "Completed",
     date: "Sep 10, 2023",
     time: "07:30 PM",
@@ -29,7 +29,7 @@ const bookings = [
   {
     id: 2,
     carName: "Audi RS5 Coupe",
-    image: "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=300&q=80",
+    image: "/assets/images/vehicles/grey_sport.png",
     status: "Active",
     date: "Sep 12, 2023",
     time: "10:00 AM",
@@ -38,7 +38,7 @@ const bookings = [
   {
     id: 3,
     carName: "Mercedes AMG GT",
-    image: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=300&q=80",
+    image: "/assets/images/vehicles/grey_sport.png",
     status: "Booked",
     date: "Oct 05, 2023",
     time: "02:15 PM",
@@ -47,7 +47,7 @@ const bookings = [
   {
     id: 4,
     carName: "Porsche 911 Turbo",
-    image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=300&q=80",
+    image: "/assets/images/vehicles/silver_supercar.png",
     status: "Cancelled",
     date: "Aug 25, 2023",
     time: "09:00 AM",
@@ -117,7 +117,7 @@ function BookingsPage() {
                     </Button>
                     <div className="text-right flex flex-col items-end">
                       <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-tighter">Total Cost</span>
-                      <span className="font-black text-primary text-xl tracking-tight">₹ {booking.totalCost}</span>
+                      <span className="font-black text-primary text-xl tracking-tight">RM {booking.totalCost}</span>
                     </div>
                   </div>
                 </div>

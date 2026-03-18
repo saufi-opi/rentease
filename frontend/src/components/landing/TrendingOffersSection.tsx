@@ -7,22 +7,22 @@ const offers = [
     id: 1,
     title: "RENTEASE 10",
     description: "Get 10% off on your first rental",
-    image: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&q=80",
+    image: "/assets/images/marketing/offer_newuser.png",
     discount: "10% OFF",
   },
   {
     id: 2,
     title: "RENTEASE 10",
     description: "Weekend special discount",
-    image: "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=400&q=80",
+    image: "/assets/images/marketing/offer_weekend.png",
     discount: "15% OFF",
   },
   {
     id: 3,
     title: "NEWUSER 50",
     description: "New user welcome bonus",
-    image: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=400&q=80",
-    discount: "Rs 500 OFF",
+    image: "/assets/images/marketing/offer_newuser.png",
+    discount: "RM 50 OFF",
   },
 ]
 

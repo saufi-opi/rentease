@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
+import { Logo } from "@/components/common/Logo"
 
 const formSchema = z
   .object({
@@ -92,7 +93,7 @@ function SignUp() {
           className="relative p-12"
         >
           <img 
-            src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&q=80" 
+            src="/assets/images/marketing/auth_bg.png" 
             alt="Sign up illustration" 
             className="max-w-md rounded-2xl shadow-2xl opacity-90"
           />
@@ -124,9 +125,8 @@ function SignUp() {
           className="w-full max-w-md"
         >
           {/* Logo */}
-          <RouterLink to="/" className="mb-6 flex items-center justify-center gap-2 transition-transform hover:scale-105">
-            <img src="/assets/images/logo.png" alt="RentEase Logo" className="h-8 w-auto" />
-            <span className="text-2xl font-bold text-foreground">RentEase</span>
+          <RouterLink to="/" className="mb-6 flex items-center justify-center transition-transform hover:scale-105">
+            <Logo iconSize="h-6" fontSize="text-xl" />
           </RouterLink>
 
           <h1 className="mb-6 text-center text-2xl font-bold text-foreground">
