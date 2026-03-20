@@ -21,9 +21,22 @@ const useAuth = () => {
   const queryClient = useQueryClient()
   const { showErrorToast } = useCustomToast()
 
+  const logout = () => {
+    setAccessToken(null)
+    queryClient.clear()
+    navigate({ to: "/login" })
+  }
+
   const { data: user } = useQuery<UserResponse | null, Error>({
     queryKey: ["currentUser"],
-    queryFn: () => UserControllerService.getCurrentUser(),
+    queryFn: async () => {
+      try {
+        return await UserControllerService.getCurrentUser()
+      } catch (error) {
+        logout()
+        return null
+      }
+    },
     enabled: isLoggedIn(),
     staleTime: 1000 * 60 * 10, // 10 minutes
   })
@@ -57,12 +70,6 @@ const useAuth = () => {
     },
     onError: handleError.bind(showErrorToast),
   })
-
-  const logout = () => {
-    setAccessToken(null)
-    queryClient.clear()
-    navigate({ to: "/login" })
-  }
 
   return {
     signUpMutation,

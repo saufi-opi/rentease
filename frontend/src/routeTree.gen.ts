@@ -8,6 +8,8 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
+import { createFileRoute } from '@tanstack/react-router'
+
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
@@ -22,6 +24,13 @@ import { Route as LayoutBookingsRouteImport } from './routes/_layout/bookings'
 import { Route as AdminLayoutDashboardRouteImport } from './routes/admin/_layout/dashboard'
 import { Route as AdminLayoutBookingsRouteImport } from './routes/admin/_layout/bookings'
 
+const AdminRouteImport = createFileRoute('/admin')()
+
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -116,6 +125,7 @@ export interface FileRoutesById {
   '/_layout/bookings': typeof LayoutBookingsRoute
   '/_layout/favourites': typeof LayoutFavouritesRoute
   '/_layout/profile': typeof LayoutProfileRoute
+  '/admin': typeof AdminRouteWithChildren
   '/admin/_layout': typeof AdminLayoutRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/admin/_layout/bookings': typeof AdminLayoutBookingsRoute
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/_layout/bookings'
     | '/_layout/favourites'
     | '/_layout/profile'
+    | '/admin'
     | '/admin/_layout'
     | '/admin/'
     | '/admin/_layout/bookings'
@@ -169,10 +180,18 @@ export interface RootRouteChildren {
   CarsRoute: typeof CarsRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  AdminRoute: typeof AdminRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -217,7 +236,7 @@ declare module '@tanstack/react-router' {
     }
     '/admin/_layout': {
       id: '/admin/_layout'
-      path: ''
+      path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminLayoutRouteImport
       parentRoute: typeof AdminRoute
@@ -275,12 +294,39 @@ const LayoutRouteChildren: LayoutRouteChildren = {
 const LayoutRouteWithChildren =
   LayoutRoute._addFileChildren(LayoutRouteChildren)
 
+interface AdminLayoutRouteChildren {
+  AdminLayoutBookingsRoute: typeof AdminLayoutBookingsRoute
+  AdminLayoutDashboardRoute: typeof AdminLayoutDashboardRoute
+}
+
+const AdminLayoutRouteChildren: AdminLayoutRouteChildren = {
+  AdminLayoutBookingsRoute: AdminLayoutBookingsRoute,
+  AdminLayoutDashboardRoute: AdminLayoutDashboardRoute,
+}
+
+const AdminLayoutRouteWithChildren = AdminLayoutRoute._addFileChildren(
+  AdminLayoutRouteChildren,
+)
+
+interface AdminRouteChildren {
+  AdminLayoutRoute: typeof AdminLayoutRouteWithChildren
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminLayoutRoute: AdminLayoutRouteWithChildren,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LayoutRoute: LayoutRouteWithChildren,
   CarsRoute: CarsRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  AdminRoute: AdminRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
