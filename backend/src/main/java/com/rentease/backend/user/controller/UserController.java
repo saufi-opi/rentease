@@ -1,14 +1,13 @@
 package com.rentease.backend.user.controller;
 
 import com.rentease.backend.auth.security.SecurityUtils;
-import com.rentease.backend.user.model.Profile;
+import com.rentease.backend.common.exception.ResourceNotFoundException;
 import com.rentease.backend.user.model.User;
 import com.rentease.backend.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import java.util.Collections;
 import java.util.UUID;
 
 @RestController
@@ -24,13 +23,10 @@ public class UserController {
         User user = User.builder()
                 .email(request.getEmail())
                 .password(request.getPassword())
-                .profile(Profile.builder()
-                        .fullName(request.getFullName())
-                        .phoneNumber(request.getPhoneNumber())
-                        .build())
-                .roleCodes(Collections.singleton("ROLE_CUSTOMER"))
+                .fullName(request.getFullName())
+                .phoneNumber(request.getPhoneNumber())
                 .build();
-        
+
         User savedUser = userService.registerUser(user);
         return mapToResponse(savedUser);
     }
@@ -39,7 +35,7 @@ public class UserController {
     public UserResponse getCurrentUser() {
         UUID userId = SecurityUtils.getCurrentUserId();
         User user = userService.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return mapToResponse(user);
     }
 
@@ -62,10 +58,10 @@ public class UserController {
                 .id(user.getId())
                 .email(user.getEmail())
                 .status(user.getStatus())
-                .fullName(user.getProfile() != null ? user.getProfile().getFullName() : null)
-                .phoneNumber(user.getProfile() != null ? user.getProfile().getPhoneNumber() : null)
-                .address(user.getProfile() != null ? user.getProfile().getAddress() : null)
-                .roles(user.getRoleCodes())
+                .fullName(user.getFullName())
+                .phoneNumber(user.getPhoneNumber())
+                .address(user.getAddress())
+                .role(user.getRole().name())
                 .build();
     }
 }

@@ -41,9 +41,9 @@ const useAuth = () => {
     staleTime: 1000 * 60 * 10, // 10 minutes
   })
 
-  const isAdmin = user?.roles?.includes("ADMIN")
-  const isManagement = user?.roles?.includes("MANAGEMENT")
-  const isUser = user?.roles?.includes("CUSTOMER")
+  const isAdmin = user?.role === "ADMIN"
+  const isManagement = user?.role === "MANAGEMENT"
+  const isUser = user?.role === "CUSTOMER"
 
   const signUpMutation = useMutation({
     mutationFn: (data: UserRegistrationRequest) =>

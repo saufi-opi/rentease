@@ -1,7 +1,7 @@
 import { defineConfig } from "@hey-api/openapi-ts"
 
 export default defineConfig({
-  input: "http://localhost:8080/v3/api-docs",
+  input: "http://localhost:8081/v3/api-docs",
   output: "./src/client",
 
   plugins: [

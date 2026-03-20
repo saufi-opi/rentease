@@ -29,7 +29,7 @@ export type UserResponse = {
     email?: string;
     status?: 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'SUSPENDED';
     address?: string;
-    roles?: Array<(string)>;
+    role?: string;
     full_name?: string;
     phone_number?: string;
 };

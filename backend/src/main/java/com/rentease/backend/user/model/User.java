@@ -3,7 +3,6 @@ package com.rentease.backend.user.model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
-import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -17,22 +16,28 @@ public class User {
     @Id
     private UUID id;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 150)
     private String email;
 
     @Column(nullable = false)
     private String password;
 
+    @Column(name = "full_name", length = 100)
+    private String fullName;
+
+    @Column(name = "phone_number", length = 15)
+    private String phoneNumber;
+
+    @Column(columnDefinition = "TEXT")
+    private String address;
+
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Role role;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
     private UserStatus status;
-
-    @Embedded
-    private Profile profile;
-
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "role_code")
-    private Set<String> roleCodes;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -36,12 +36,8 @@ export const UserResponseSchema = {
         address: {
             type: 'string'
         },
-        roles: {
-            type: 'array',
-            items: {
-                type: 'string'
-            },
-            uniqueItems: true
+        role: {
+            type: 'string'
         },
         full_name: {
             type: 'string'

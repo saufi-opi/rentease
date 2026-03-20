@@ -1,6 +1,6 @@
 package com.rentease.backend.common.config;
 
-import com.rentease.backend.user.model.Profile;
+import com.rentease.backend.user.model.Role;
 import com.rentease.backend.user.model.User;
 import com.rentease.backend.user.model.UserStatus;
 import com.rentease.backend.user.repository.UserRepository;
@@ -9,8 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-
-import java.util.Collections;
 
 @Component
 @RequiredArgsConstructor
@@ -29,17 +27,15 @@ public class DataInitializer implements CommandLineRunner {
         String adminEmail = "admin@example.com";
         if (userRepository.findByEmail(adminEmail).isEmpty()) {
             log.info("Creating default admin user...");
-            
+
             User admin = User.builder()
                     .email(adminEmail)
                     .password(passwordEncoder.encode("aaAA1234"))
                     .status(UserStatus.ACTIVE)
-                    .roleCodes(Collections.singleton("ADMIN"))
-                    .profile(Profile.builder()
-                            .fullName("System Admin")
-                            .build())
+                    .role(Role.ADMIN)
+                    .fullName("System Admin")
                     .build();
-            
+
             userRepository.save(admin);
             log.info("Default admin user created successfully.");
         } else {

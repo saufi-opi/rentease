@@ -1,0 +1,4 @@
+-- V7: Seed default admin user
+-- Password is BCrypt hash of 'aaAA1234'
+-- UUID is a fixed value for the admin user so DataInitializer won't duplicate it
+-- Note: DataInitializer in Java also handles this, but this ensures admin exists even without the app running
