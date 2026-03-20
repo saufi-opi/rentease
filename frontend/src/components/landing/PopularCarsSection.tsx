@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Star, Users, Fuel, Settings, Bike, Car } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Link } from "@tanstack/react-router"
 
 const popularVehicles = {
   cars: [
@@ -138,11 +139,11 @@ export function PopularCarsSection() {
               className="w-full max-w-[400px]"
             >
               <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1">
-                <TabsTrigger value="cars" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
+                <TabsTrigger value="cars" className="flex items-center gap-2 data-[state=active]:bg-accent data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all">
                   <Car className="h-4 w-4" />
                   Car
                 </TabsTrigger>
-                <TabsTrigger value="bikes" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
+                <TabsTrigger value="bikes" className="flex items-center gap-2 data-[state=active]:bg-accent data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all">
                   <Bike className="h-4 w-4" />
                   Bike
                 </TabsTrigger>
@@ -195,15 +196,14 @@ export function PopularCarsSection() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-lg font-bold text-primary">RM {vehicle.price}</span>
-                        <span className="text-sm text-muted-foreground">/day</span>
+                      <div className="flex flex-col gap-2 w-full">
+                        <Button size="sm" className="w-full bg-primary text-primary-foreground transition-all duration-300 hover:scale-105 hover:bg-primary/90" asChild>
+                          <Link to={`/vehicles/${vehicle.id}` as any}>Book Now</Link>
+                        </Button>
+                        <Button variant="outline" size="sm" className="w-full text-xs h-8 border-primary/20 text-primary hover:bg-primary/5" asChild>
+                          <Link to={`/vehicles/${vehicle.id}` as any}>View Details</Link>
+                        </Button>
                       </div>
-                      <Button size="sm" className="bg-primary text-primary-foreground transition-all duration-300 hover:scale-105 hover:bg-primary/90">
-                        Book Now
-                      </Button>
-                    </div>
                   </CardContent>
                 </Card>
               </motion.div>

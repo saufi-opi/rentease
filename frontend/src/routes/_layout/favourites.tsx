@@ -102,7 +102,7 @@ function FavouritesPage() {
               You haven't saved any vehicles to your favourites. Browse our cars and click the heart icon to save them here for quick access!
             </p>
             <Button className="mt-8 rounded-full px-8" asChild>
-              <Link to="/cars">Browse Vehicles</Link>
+              <Link to="/vehicles">Browse Vehicles</Link>
             </Button>
           </div>
         )}

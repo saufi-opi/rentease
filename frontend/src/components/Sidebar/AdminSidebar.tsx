@@ -1,6 +1,7 @@
 import {
   ClipboardList,
   LayoutDashboard,
+  Car
 } from "lucide-react"
 
 import {
@@ -16,6 +17,7 @@ export function AdminSidebar() {
   // 1. Admin Menu
   const adminItems: NavItemConfig[] = [
     { icon: LayoutDashboard, title: "Admin Dashboard", path: "/admin/dashboard" },
+    { icon: Car, title: "Vehicles", path: "/admin/vehicles" },
     { icon: ClipboardList, title: "All Bookings", path: "/admin/bookings" },
   ]
 

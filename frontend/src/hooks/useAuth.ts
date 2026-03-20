@@ -42,7 +42,7 @@ const useAuth = () => {
   })
 
   const isAdmin = user?.role === "ADMIN"
-  const isManagement = user?.role === "MANAGEMENT"
+  const isManagement = user?.role === "TOP_MANAGEMENT"
   const isUser = user?.role === "CUSTOMER"
 
   const signUpMutation = useMutation({

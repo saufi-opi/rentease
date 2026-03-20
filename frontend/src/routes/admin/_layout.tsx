@@ -28,7 +28,7 @@ export const Route = createFileRoute("/admin/_layout")({
         queryKey: ["currentUser"],
         queryFn: () => UserControllerService.getCurrentUser(),
       })
-      const hasAccess = currentUser?.role === "ADMIN" || currentUser?.role === "MANAGEMENT"
+      const hasAccess = currentUser?.role === "ADMIN" || currentUser?.role === "TOP_MANAGEMENT"
       if (!hasAccess) {
         throw notFound()
       }

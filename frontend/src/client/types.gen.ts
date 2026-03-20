@@ -36,11 +36,65 @@ export type UserResponse = {
 
 export type status = 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'SUSPENDED';
 
+export type VehiclePage = {
+    content?: Array<VehicleResponse>;
+    page?: number;
+    size?: number;
+    totalElements?: number;
+    totalPages?: number;
+    last?: boolean;
+};
+
+export type VehicleRequest = {
+    type: string;
+    brand: string;
+    model: string;
+    year: number;
+    rentalRate: number;
+    seats: number;
+    fuelType: string;
+    image?: (Blob | File);
+    availabilityStatus?: string;
+    description?: string;
+    transmission?: string;
+    features?: Array<(string)>;
+    discount?: number;
+};
+
+export type VehicleResponse = {
+    id?: string;
+    type?: string;
+    brand?: string;
+    model?: string;
+    year?: number;
+    seats?: number;
+    fuelType?: string;
+    description?: string;
+    transmission?: string;
+    features?: Array<(string)>;
+    discount?: number;
+    rental_rate?: number;
+    availability_status?: string;
+    image_url?: string;
+    registration_date?: string;
+    discounted_price?: number;
+};
+
 export type LoginData = {
     requestBody: LoginRequest;
 };
 
 export type LoginResponse = (AuthToken);
+
+export type UploadImageData = {
+    requestBody?: {
+        file: (Blob | File);
+    };
+};
+
+export type UploadImageResponse = ({
+    [key: string]: (string);
+});
 
 export type RegisterData = {
     requestBody: UserRegistrationRequest;
@@ -57,3 +111,55 @@ export type UpdateProfileData = {
 };
 
 export type UpdateProfileResponse = (UserResponse);
+
+export type UpdateVehicleData = {
+    formData?: VehicleRequest;
+    id: string;
+};
+
+export type UpdateVehicleResponse = (VehicleResponse);
+
+export type DeleteVehicleData = {
+    id: string;
+};
+
+export type DeleteVehicleResponse = (void);
+
+export type ListVehiclesData = {
+    brand?: string;
+    page?: number;
+    search?: string;
+    size?: number;
+    sortBy?: string;
+    status?: string;
+    type?: string;
+};
+
+export type ListVehiclesResponse = (VehiclePage);
+
+export type CreateVehicleData = {
+    formData?: VehicleRequest;
+};
+
+export type CreateVehicleResponse = (VehicleResponse);
+
+export type BrowseVehiclesData = {
+    brand?: string;
+    page?: number;
+    search?: string;
+    size?: number;
+    sortBy?: string;
+    type?: string;
+};
+
+export type BrowseVehiclesResponse = (VehiclePage);
+
+export type GetVehicleData = {
+    id: string;
+};
+
+export type GetVehicleResponse = (VehicleResponse);
+
+export type GetVehicleSuggestionsResponse = ({
+    [key: string]: Array<(string)>;
+});

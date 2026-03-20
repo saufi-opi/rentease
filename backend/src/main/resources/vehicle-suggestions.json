@@ -1,0 +1,14 @@
+{
+  "Toyota": ["Vios", "Yaris", "Camry", "Corolla", "Hilux", "Vellfire", "Alphard"],
+  "Honda": ["City", "Civic", "Accord", "HR-V", "CR-V", "BR-V", "Jazz"],
+  "Perodua": ["Myvi", "Axia", "Bezza", "Alza", "Ativa", "Aruz"],
+  "Proton": ["Saga", "Persona", "X50", "X70", "X90", "Iriz", "Exora"],
+  "BMW": ["3 Series", "5 Series", "X3", "X5", "7 Series"],
+  "Mercedes-Benz": ["C-Class", "E-Class", "S-Class", "GLC", "GLA"],
+  "Nissan": ["Almera", "Serena", "X-Trail", "Navara", "Leaf"],
+  "Mazda": ["Mazda2", "Mazda3", "CX-5", "CX-30", "CX-8"],
+  "Yamaha": ["Y15ZR", "MT-09", "NVX 155", "R15", "R25", "NMAX", "XMAX"],
+  "Kawasaki": ["Ninja 250", "Z900", "Versys", "Z250", "Ninja 400"],
+  "Honda Motor": ["CBR150R", "RS150R", "Wave 125i", "ADV150", "CBR250RR"],
+  "Vespa": ["Primavera 150", "Sprint 150", "GTS 300"]
+}

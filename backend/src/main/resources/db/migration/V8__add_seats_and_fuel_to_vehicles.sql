@@ -1,0 +1,3 @@
+ALTER TABLE vehicles 
+ADD COLUMN seats INT DEFAULT 4,
+ADD COLUMN fuel_type VARCHAR(50) DEFAULT 'Petrol';

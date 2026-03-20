@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { LoginData, LoginResponse, RegisterData, RegisterResponse, GetCurrentUserResponse, DeleteProfileResponse, UpdateProfileData, UpdateProfileResponse } from './types.gen';
+import type { LoginData, LoginResponse, UploadImageData, UploadImageResponse, RegisterData, RegisterResponse, GetCurrentUserResponse, DeleteProfileResponse, UpdateProfileData, UpdateProfileResponse, UpdateVehicleData, UpdateVehicleResponse, DeleteVehicleData, DeleteVehicleResponse, ListVehiclesData, ListVehiclesResponse, CreateVehicleData, CreateVehicleResponse, BrowseVehiclesData, BrowseVehiclesResponse, GetVehicleData, GetVehicleResponse, GetVehicleSuggestionsResponse } from './types.gen';
 
 export class AuthControllerService {
     /**
@@ -16,6 +16,23 @@ export class AuthControllerService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/auth/login',
+            body: data.requestBody,
+            mediaType: 'application/json'
+        });
+    }
+}
+
+export class FileUploadControllerService {
+    /**
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns string OK
+     * @throws ApiError
+     */
+    public static uploadImage(data: UploadImageData = {}): CancelablePromise<UploadImageResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/admin/upload/image',
             body: data.requestBody,
             mediaType: 'application/json'
         });
@@ -72,6 +89,139 @@ export class UserControllerService {
             url: '/api/v1/users/me',
             body: data.requestBody,
             mediaType: 'application/json'
+        });
+    }
+}
+
+export class VehicleControllerService {
+    /**
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.formData
+     * @returns VehicleResponse OK
+     * @throws ApiError
+     */
+    public static updateVehicle(data: UpdateVehicleData): CancelablePromise<UpdateVehicleResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/admin/vehicles/{id}',
+            path: {
+                id: data.id
+            },
+            formData: data.formData,
+            mediaType: 'multipart/form-data'
+        });
+    }
+    
+    /**
+     * @param data The data for the request.
+     * @param data.id
+     * @returns void No Content
+     * @throws ApiError
+     */
+    public static deleteVehicle(data: DeleteVehicleData): CancelablePromise<DeleteVehicleResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/admin/vehicles/{id}',
+            path: {
+                id: data.id
+            }
+        });
+    }
+    
+    /**
+     * @param data The data for the request.
+     * @param data.page
+     * @param data.size
+     * @param data.type
+     * @param data.brand
+     * @param data.status
+     * @param data.search
+     * @param data.sortBy
+     * @returns VehiclePage OK
+     * @throws ApiError
+     */
+    public static listVehicles(data: ListVehiclesData = {}): CancelablePromise<ListVehiclesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/admin/vehicles',
+            query: {
+                page: data.page,
+                size: data.size,
+                type: data.type,
+                brand: data.brand,
+                status: data.status,
+                search: data.search,
+                sort_by: data.sortBy
+            }
+        });
+    }
+    
+    /**
+     * @param data The data for the request.
+     * @param data.formData
+     * @returns VehicleResponse Created
+     * @throws ApiError
+     */
+    public static createVehicle(data: CreateVehicleData = {}): CancelablePromise<CreateVehicleResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/admin/vehicles',
+            formData: data.formData,
+            mediaType: 'multipart/form-data'
+        });
+    }
+    
+    /**
+     * @param data The data for the request.
+     * @param data.page
+     * @param data.size
+     * @param data.type
+     * @param data.brand
+     * @param data.search
+     * @param data.sortBy
+     * @returns VehiclePage OK
+     * @throws ApiError
+     */
+    public static browseVehicles(data: BrowseVehiclesData = {}): CancelablePromise<BrowseVehiclesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/vehicles',
+            query: {
+                page: data.page,
+                size: data.size,
+                type: data.type,
+                brand: data.brand,
+                search: data.search,
+                sort_by: data.sortBy
+            }
+        });
+    }
+    
+    /**
+     * @param data The data for the request.
+     * @param data.id
+     * @returns VehicleResponse OK
+     * @throws ApiError
+     */
+    public static getVehicle(data: GetVehicleData): CancelablePromise<GetVehicleResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/vehicles/{id}',
+            path: {
+                id: data.id
+            }
+        });
+    }
+    
+    /**
+     * @returns string OK
+     * @throws ApiError
+     */
+    public static getVehicleSuggestions(): CancelablePromise<GetVehicleSuggestionsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/vehicles/suggestions'
         });
     }
 }

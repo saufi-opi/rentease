@@ -13,14 +13,16 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as CarsRouteImport } from './routes/cars'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VehiclesIndexRouteImport } from './routes/vehicles/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as VehiclesIdRouteImport } from './routes/vehicles/$id'
 import { Route as AdminLayoutRouteImport } from './routes/admin/_layout'
 import { Route as LayoutProfileRouteImport } from './routes/_layout/profile'
 import { Route as LayoutFavouritesRouteImport } from './routes/_layout/favourites'
 import { Route as LayoutBookingsRouteImport } from './routes/_layout/bookings'
+import { Route as AdminLayoutVehiclesRouteImport } from './routes/admin/_layout/vehicles'
 import { Route as AdminLayoutDashboardRouteImport } from './routes/admin/_layout/dashboard'
 import { Route as AdminLayoutBookingsRouteImport } from './routes/admin/_layout/bookings'
 
@@ -41,11 +43,6 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CarsRoute = CarsRouteImport.update({
-  id: '/cars',
-  path: '/cars',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LayoutRoute = LayoutRouteImport.update({
   id: '/_layout',
   getParentRoute: () => rootRouteImport,
@@ -55,10 +52,20 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VehiclesIndexRoute = VehiclesIndexRouteImport.update({
+  id: '/vehicles/',
+  path: '/vehicles/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const VehiclesIdRoute = VehiclesIdRouteImport.update({
+  id: '/vehicles/$id',
+  path: '/vehicles/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminLayoutRoute = AdminLayoutRouteImport.update({
   id: '/_layout',
@@ -79,6 +86,11 @@ const LayoutBookingsRoute = LayoutBookingsRouteImport.update({
   path: '/bookings',
   getParentRoute: () => LayoutRoute,
 } as any)
+const AdminLayoutVehiclesRoute = AdminLayoutVehiclesRouteImport.update({
+  id: '/vehicles',
+  path: '/vehicles',
+  getParentRoute: () => AdminLayoutRoute,
+} as any)
 const AdminLayoutDashboardRoute = AdminLayoutDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -92,34 +104,37 @@ const AdminLayoutBookingsRoute = AdminLayoutBookingsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/cars': typeof CarsRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/bookings': typeof LayoutBookingsRoute
   '/favourites': typeof LayoutFavouritesRoute
   '/profile': typeof LayoutProfileRoute
   '/admin': typeof AdminLayoutRouteWithChildren
+  '/vehicles/$id': typeof VehiclesIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/vehicles': typeof VehiclesIndexRoute
   '/admin/bookings': typeof AdminLayoutBookingsRoute
   '/admin/dashboard': typeof AdminLayoutDashboardRoute
+  '/admin/vehicles': typeof AdminLayoutVehiclesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/cars': typeof CarsRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/bookings': typeof LayoutBookingsRoute
   '/favourites': typeof LayoutFavouritesRoute
   '/profile': typeof LayoutProfileRoute
   '/admin': typeof AdminIndexRoute
+  '/vehicles/$id': typeof VehiclesIdRoute
+  '/vehicles': typeof VehiclesIndexRoute
   '/admin/bookings': typeof AdminLayoutBookingsRoute
   '/admin/dashboard': typeof AdminLayoutDashboardRoute
+  '/admin/vehicles': typeof AdminLayoutVehiclesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_layout': typeof LayoutRouteWithChildren
-  '/cars': typeof CarsRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/_layout/bookings': typeof LayoutBookingsRoute
@@ -127,41 +142,47 @@ export interface FileRoutesById {
   '/_layout/profile': typeof LayoutProfileRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin/_layout': typeof AdminLayoutRouteWithChildren
+  '/vehicles/$id': typeof VehiclesIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/vehicles/': typeof VehiclesIndexRoute
   '/admin/_layout/bookings': typeof AdminLayoutBookingsRoute
   '/admin/_layout/dashboard': typeof AdminLayoutDashboardRoute
+  '/admin/_layout/vehicles': typeof AdminLayoutVehiclesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/cars'
     | '/login'
     | '/signup'
     | '/bookings'
     | '/favourites'
     | '/profile'
     | '/admin'
+    | '/vehicles/$id'
     | '/admin/'
+    | '/vehicles'
     | '/admin/bookings'
     | '/admin/dashboard'
+    | '/admin/vehicles'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/cars'
     | '/login'
     | '/signup'
     | '/bookings'
     | '/favourites'
     | '/profile'
     | '/admin'
+    | '/vehicles/$id'
+    | '/vehicles'
     | '/admin/bookings'
     | '/admin/dashboard'
+    | '/admin/vehicles'
   id:
     | '__root__'
     | '/'
     | '/_layout'
-    | '/cars'
     | '/login'
     | '/signup'
     | '/_layout/bookings'
@@ -169,18 +190,22 @@ export interface FileRouteTypes {
     | '/_layout/profile'
     | '/admin'
     | '/admin/_layout'
+    | '/vehicles/$id'
     | '/admin/'
+    | '/vehicles/'
     | '/admin/_layout/bookings'
     | '/admin/_layout/dashboard'
+    | '/admin/_layout/vehicles'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LayoutRoute: typeof LayoutRouteWithChildren
-  CarsRoute: typeof CarsRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   AdminRoute: typeof AdminRouteWithChildren
+  VehiclesIdRoute: typeof VehiclesIdRoute
+  VehiclesIndexRoute: typeof VehiclesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -206,13 +231,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/cars': {
-      id: '/cars'
-      path: '/cars'
-      fullPath: '/cars'
-      preLoaderRoute: typeof CarsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_layout': {
       id: '/_layout'
       path: ''
@@ -227,12 +245,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vehicles/': {
+      id: '/vehicles/'
+      path: '/vehicles'
+      fullPath: '/vehicles'
+      preLoaderRoute: typeof VehiclesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/vehicles/$id': {
+      id: '/vehicles/$id'
+      path: '/vehicles/$id'
+      fullPath: '/vehicles/$id'
+      preLoaderRoute: typeof VehiclesIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/_layout': {
       id: '/admin/_layout'
@@ -261,6 +293,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/bookings'
       preLoaderRoute: typeof LayoutBookingsRouteImport
       parentRoute: typeof LayoutRoute
+    }
+    '/admin/_layout/vehicles': {
+      id: '/admin/_layout/vehicles'
+      path: '/vehicles'
+      fullPath: '/admin/vehicles'
+      preLoaderRoute: typeof AdminLayoutVehiclesRouteImport
+      parentRoute: typeof AdminLayoutRoute
     }
     '/admin/_layout/dashboard': {
       id: '/admin/_layout/dashboard'
@@ -297,11 +336,13 @@ const LayoutRouteWithChildren =
 interface AdminLayoutRouteChildren {
   AdminLayoutBookingsRoute: typeof AdminLayoutBookingsRoute
   AdminLayoutDashboardRoute: typeof AdminLayoutDashboardRoute
+  AdminLayoutVehiclesRoute: typeof AdminLayoutVehiclesRoute
 }
 
 const AdminLayoutRouteChildren: AdminLayoutRouteChildren = {
   AdminLayoutBookingsRoute: AdminLayoutBookingsRoute,
   AdminLayoutDashboardRoute: AdminLayoutDashboardRoute,
+  AdminLayoutVehiclesRoute: AdminLayoutVehiclesRoute,
 }
 
 const AdminLayoutRouteWithChildren = AdminLayoutRoute._addFileChildren(
@@ -323,10 +364,11 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LayoutRoute: LayoutRouteWithChildren,
-  CarsRoute: CarsRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   AdminRoute: AdminRouteWithChildren,
+  VehiclesIdRoute: VehiclesIdRoute,
+  VehiclesIndexRoute: VehiclesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

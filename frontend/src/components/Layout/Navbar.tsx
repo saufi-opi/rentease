@@ -12,11 +12,11 @@ export function Navbar() {
         Home
       </Link>
       <Link 
-        to="/cars" 
+        to="/vehicles" 
         className="text-muted-foreground hover:text-primary transition-colors"
         activeProps={{ className: "text-primary font-bold" }}
       >
-        Cars
+        Vehicles
       </Link>
       <a href="#about" className="text-muted-foreground hover:text-primary transition-colors">About</a>
       <a href="#contact" className="text-muted-foreground hover:text-primary transition-colors">Contact</a>
