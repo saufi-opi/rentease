@@ -4,7 +4,7 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import { 
   Car, Calendar, Star, Heart, Fuel, Users, Settings2, 
-  ChevronLeft, ChevronRight, Loader2, ShieldCheck, 
+  ChevronRight, Loader2, ShieldCheck, 
   Clock, Wind, Bluetooth, Usb, Music, MapPin, CheckCircle2,
   ArrowRight
 } from "lucide-react"
@@ -21,7 +21,6 @@ export const Route = createFileRoute("/vehicles/$id")({
 
 function VehicleDetailsPage() {
   const { id } = Route.useParams()
-  const [selectedImage, setSelectedImage] = useState(0)
   const [isFavorite, setIsFavorite] = useState(false)
 
   const { data: vehicle, isLoading } = useQuery({
@@ -71,12 +70,7 @@ function VehicleDetailsPage() {
     )
   }
 
-  const images = [
-    vehicle.image_url || "/assets/images/vehicles/placeholder.png",
-    "/assets/images/vehicles/placeholder.png", // Mock additional images
-    "/assets/images/vehicles/placeholder.png",
-    "/assets/images/vehicles/placeholder.png",
-  ]
+  const mainImage = vehicle.image_url || "/assets/images/vehicles/placeholder.png"
 
   const features = vehicle.features && vehicle.features.length > 0 
     ? vehicle.features.map(f => ({
@@ -127,25 +121,12 @@ function VehicleDetailsPage() {
               className="relative aspect-video bg-card rounded-2xl overflow-hidden shadow-xl border border-border group"
             >
               <img 
-                src={images[selectedImage]} 
+                src={mainImage} 
                 alt={`${vehicle.brand} ${vehicle.model}`}
                 className="w-full h-full object-cover transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               
-              <button 
-                onClick={() => setSelectedImage(prev => (prev > 0 ? prev - 1 : images.length - 1))}
-                className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-background/80 hover:bg-background shadow-lg transition-all hover:scale-110"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </button>
-              <button 
-                onClick={() => setSelectedImage(prev => (prev < images.length - 1 ? prev + 1 : 0))}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-background/80 hover:bg-background shadow-lg transition-all hover:scale-110"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </button>
-
               <button 
                 onClick={() => setIsFavorite(!isFavorite)}
                 className="absolute top-4 right-4 p-3 rounded-full bg-background/80 hover:bg-background shadow-lg transition-all hover:scale-110"
@@ -154,20 +135,6 @@ function VehicleDetailsPage() {
               </button>
             </motion.div>
 
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
-              {images.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedImage(idx)}
-                  className={`relative shrink-0 w-24 sm:w-32 aspect-video rounded-xl overflow-hidden border-2 transition-all ${
-                    selectedImage === idx ? 'border-primary ring-2 ring-primary/20 scale-105' : 'border-border hover:border-primary/50'
-                  }`}
-                >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
-                  {selectedImage !== idx && <div className="absolute inset-0 bg-black/20" />}
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Right Column: Key Details & Booking */}
