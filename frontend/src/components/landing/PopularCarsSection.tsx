@@ -1,10 +1,10 @@
+import { Link } from "@tanstack/react-router"
+import { AnimatePresence, motion, type Variants } from "framer-motion"
+import { Bike, Car, Fuel, Settings, Star, Users } from "lucide-react"
 import { useState } from "react"
-import { motion, Variants, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Star, Users, Fuel, Settings, Bike, Car } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Link } from "@tanstack/react-router"
 
 const popularVehicles = {
   cars: [
@@ -90,7 +90,7 @@ const popularVehicles = {
       transmission: "Automatic",
       price: 80,
     },
-  ]
+  ],
 }
 
 const containerVariants = {
@@ -117,33 +117,44 @@ const cardVariants: Variants = {
 
 export function PopularCarsSection() {
   const [activeTab, setActiveTab] = useState<"cars" | "bikes">("cars")
-  const data = activeTab === "cars" ? popularVehicles.cars : popularVehicles.bikes
+  const data =
+    activeTab === "cars" ? popularVehicles.cars : popularVehicles.bikes
 
   return (
     <section className="bg-background py-16">
       <div className="container mx-auto px-4">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.6 }}
           className="mb-10 text-center"
         >
-          <h2 className="mb-2 text-3xl font-bold text-foreground">POPULAR FOR RENTING</h2>
-          <p className="text-muted-foreground">Choose from our most popular rental vehicles</p>
-          
+          <h2 className="mb-2 text-3xl font-bold text-foreground">
+            POPULAR FOR RENTING
+          </h2>
+          <p className="text-muted-foreground">
+            Choose from our most popular rental vehicles
+          </p>
+
           <div className="mt-8 flex justify-center">
-            <Tabs 
-              value={activeTab} 
+            <Tabs
+              value={activeTab}
               onValueChange={(v) => setActiveTab(v as "cars" | "bikes")}
               className="w-full max-w-[400px]"
             >
               <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1">
-                <TabsTrigger value="cars" className="flex items-center gap-2 data-[state=active]:bg-accent data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all">
+                <TabsTrigger
+                  value="cars"
+                  className="flex items-center gap-2 data-[state=active]:bg-accent data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all"
+                >
                   <Car className="h-4 w-4" />
                   Car
                 </TabsTrigger>
-                <TabsTrigger value="bikes" className="flex items-center gap-2 data-[state=active]:bg-accent data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all">
+                <TabsTrigger
+                  value="bikes"
+                  className="flex items-center gap-2 data-[state=active]:bg-accent data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all"
+                >
                   <Bike className="h-4 w-4" />
                   Bike
                 </TabsTrigger>
@@ -153,7 +164,7 @@ export function PopularCarsSection() {
         </motion.div>
 
         <AnimatePresence mode="wait">
-          <motion.div 
+          <motion.div
             key={activeTab}
             variants={containerVariants}
             initial="hidden"
@@ -166,21 +177,25 @@ export function PopularCarsSection() {
               <motion.div key={vehicle.id} variants={cardVariants}>
                 <Card className="group overflow-hidden border border-border transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
                   <div className="aspect-4/3 overflow-hidden">
-                    <img 
-                      src={vehicle.image} 
-                      alt={vehicle.name} 
+                    <img
+                      src={vehicle.image}
+                      alt={vehicle.name}
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
                   </div>
                   <CardContent className="p-4">
                     <div className="mb-2 flex items-center justify-between">
-                      <h3 className="font-semibold text-foreground">{vehicle.name}</h3>
+                      <h3 className="font-semibold text-foreground">
+                        {vehicle.name}
+                      </h3>
                       <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm text-muted-foreground">{vehicle.rating}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {vehicle.rating}
+                        </span>
                       </div>
                     </div>
-                    
+
                     <div className="mb-4 flex items-center gap-4 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Users className="h-3 w-3" />
@@ -196,14 +211,27 @@ export function PopularCarsSection() {
                       </div>
                     </div>
 
-                      <div className="flex flex-col gap-2 w-full">
-                        <Button size="sm" className="w-full bg-primary text-primary-foreground transition-all duration-300 hover:scale-105 hover:bg-primary/90" asChild>
-                          <Link to={`/vehicles/${vehicle.id}` as any}>Book Now</Link>
-                        </Button>
-                        <Button variant="outline" size="sm" className="w-full text-xs h-8 border-primary/20 text-primary hover:bg-primary/5" asChild>
-                          <Link to={`/vehicles/${vehicle.id}` as any}>View Details</Link>
-                        </Button>
-                      </div>
+                    <div className="flex flex-col gap-2 w-full">
+                      <Button
+                        size="sm"
+                        className="w-full bg-primary text-primary-foreground transition-all duration-300 hover:scale-105 hover:bg-primary/90"
+                        asChild
+                      >
+                        <Link to={`/vehicles/${vehicle.id}` as any}>
+                          Book Now
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs h-8 border-primary/20 text-primary hover:bg-primary/5"
+                        asChild
+                      >
+                        <Link to={`/vehicles/${vehicle.id}` as any}>
+                          View Details
+                        </Link>
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>

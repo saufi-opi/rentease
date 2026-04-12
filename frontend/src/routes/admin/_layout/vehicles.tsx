@@ -1,17 +1,30 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useState, useEffect } from "react"
-import { useDebounce } from "@/hooks/useDebounce"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Car, Search, Plus, Loader2, Edit, Trash2, Image as ImageIcon, ZoomIn, ZoomOut, Bike, Check, Settings } from "lucide-react"
+import {
+  Bike,
+  Car,
+  Check,
+  Edit,
+  Image as ImageIcon,
+  Loader2,
+  Plus,
+  Search,
+  Settings,
+  Trash2,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react"
+import { useEffect, useState } from "react"
 import Cropper from "react-easy-crop"
-import getCroppedImg from "@/utils/cropImage"
-import { Slider } from "@/components/ui/slider"
+import { toast } from "sonner"
+import {
+  VehicleControllerService,
+  type VehicleRequest,
+  type VehicleResponse,
+} from "@/client"
+import { Badge } from "@/components/ui/badge"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -20,10 +33,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Slider } from "@/components/ui/slider"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { VehicleControllerService, VehicleRequest, VehicleResponse } from "@/client"
-import { toast } from "sonner"
+import { useDebounce } from "@/hooks/useDebounce"
+import getCroppedImg from "@/utils/cropImage"
 
 export const Route = createFileRoute("/admin/_layout/vehicles")({
   component: AdminVehicles,
@@ -34,7 +64,7 @@ export const Route = createFileRoute("/admin/_layout/vehicles")({
 
 function AdminVehicles() {
   const queryClient = useQueryClient()
-  
+
   // Filters and Pagination
   const [currentPage, setCurrentPage] = useState(1)
   const [search, setSearch] = useState("")
@@ -51,8 +81,10 @@ function AdminVehicles() {
   // Modals
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
-  const [editingVehicle, setEditingVehicle] = useState<VehicleResponse | null>(null)
-  
+  const [editingVehicle, setEditingVehicle] = useState<VehicleResponse | null>(
+    null,
+  )
+
   // Form State
   const [selectedFile, setSelectedFile] = useState<File | Blob | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -63,7 +95,7 @@ function AdminVehicles() {
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null)
   const [isCropperOpen, setIsCropperOpen] = useState(false)
-  
+
   const [formData, setFormData] = useState<VehicleRequest>({
     brand: "",
     model: "",
@@ -76,33 +108,36 @@ function AdminVehicles() {
     description: "",
     transmission: "MANUAL",
     features: [],
-    discount: 0
+    discount: 0,
   })
 
   // Queries
   const { data, isLoading } = useQuery({
     queryKey: ["admin-vehicles", currentPage, search, statusFilter, typeFilter],
-    queryFn: () => VehicleControllerService.listVehicles({
-      page: currentPage - 1,
-      size: 10,
-      search: search || undefined,
-      status: statusFilter !== "ALL" ? statusFilter : undefined,
-      type: typeFilter !== "ALL" ? typeFilter : undefined,
-      sortBy: "createdAt_desc"
-    })
+    queryFn: () =>
+      VehicleControllerService.listVehicles({
+        page: currentPage - 1,
+        size: 10,
+        search: search || undefined,
+        status: statusFilter !== "ALL" ? statusFilter : undefined,
+        type: typeFilter !== "ALL" ? typeFilter : undefined,
+        sortBy: "createdAt_desc",
+      }),
   })
 
   const { data: suggestions } = useQuery({
     queryKey: ["vehicle-suggestions"],
-    queryFn: () => VehicleControllerService.getVehicleSuggestions()
+    queryFn: () => VehicleControllerService.getVehicleSuggestions(),
   })
 
   const suggestionBrands = suggestions ? Object.keys(suggestions) : []
-  const suggestionModels = suggestions && formData.brand ? (suggestions[formData.brand] || []) : []
+  const suggestionModels =
+    suggestions && formData.brand ? suggestions[formData.brand] || [] : []
 
   // Mutations
   const createMutation = useMutation({
-    mutationFn: (data: { formData: VehicleRequest }) => VehicleControllerService.createVehicle(data),
+    mutationFn: (data: { formData: VehicleRequest }) =>
+      VehicleControllerService.createVehicle(data),
     onSuccess: () => {
       toast.success("Success", { description: "Vehicle created successfully." })
       queryClient.invalidateQueries({ queryKey: ["admin-vehicles"] })
@@ -110,11 +145,11 @@ function AdminVehicles() {
     },
     onError: () => {
       toast.error("Error", { description: "Failed to create vehicle." })
-    }
+    },
   })
 
   const updateMutation = useMutation({
-    mutationFn: (data: { id: string, formData: VehicleRequest }) => 
+    mutationFn: (data: { id: string; formData: VehicleRequest }) =>
       VehicleControllerService.updateVehicle(data),
     onSuccess: () => {
       toast.success("Success", { description: "Vehicle updated successfully." })
@@ -123,7 +158,7 @@ function AdminVehicles() {
     },
     onError: () => {
       toast.error("Error", { description: "Failed to update vehicle." })
-    }
+    },
   })
 
   const deleteMutation = useMutation({
@@ -135,15 +170,12 @@ function AdminVehicles() {
     },
     onError: () => {
       toast.error("Error", { description: "Failed to delete vehicle." })
-    }
+    },
   })
 
   const vehicles = data?.content || []
   const totalPages = data?.totalPages || 1
   const totalElements = data?.totalElements || 0
-
-
-
 
   const openForm = (vehicle?: VehicleResponse) => {
     if (vehicle) {
@@ -160,7 +192,7 @@ function AdminVehicles() {
         description: vehicle.description || "",
         transmission: vehicle.transmission || "MANUAL",
         features: vehicle.features || [],
-        discount: vehicle.discount || 0
+        discount: vehicle.discount || 0,
       })
       setImagePreview(vehicle.image_url || null)
     } else {
@@ -177,7 +209,7 @@ function AdminVehicles() {
         description: "",
         transmission: "MANUAL",
         features: [],
-        discount: 0
+        discount: 0,
       })
       setImagePreview(null)
     }
@@ -199,13 +231,13 @@ function AdminVehicles() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     const submitData: VehicleRequest = { ...formData }
     if (selectedFile) {
       submitData.image = selectedFile
     }
 
-    if (editingVehicle && editingVehicle.id) {
+    if (editingVehicle?.id) {
       updateMutation.mutate({ id: editingVehicle.id, formData: submitData })
     } else {
       createMutation.mutate({ formData: submitData })
@@ -213,7 +245,7 @@ function AdminVehicles() {
   }
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
+    if (e.target.files?.[0]) {
       const file = e.target.files[0]
       const reader = new FileReader()
       reader.addEventListener("load", () => {
@@ -230,12 +262,15 @@ function AdminVehicles() {
 
   const handleSaveCrop = async () => {
     if (!cropImage || !croppedAreaPixels) return
-    
+
     try {
       const croppedImage = await getCroppedImg(cropImage, croppedAreaPixels)
       if (croppedImage) {
-        setSelectedFile(croppedImage)
-        setImagePreview(URL.createObjectURL(croppedImage))
+        const file = new File([croppedImage], "cropped.jpg", {
+          type: "image/jpeg",
+        })
+        setSelectedFile(file)
+        setImagePreview(URL.createObjectURL(file))
         setIsCropperOpen(false)
         setCropImage(null)
       }
@@ -246,11 +281,26 @@ function AdminVehicles() {
   }
 
   const getStatusBadge = (status?: string) => {
-    switch(status) {
-      case "AVAILABLE": return <Badge className="bg-emerald-500 hover:bg-emerald-600">Available</Badge>
-      case "BOOKED": return <Badge variant="secondary" className="bg-amber-500 text-white hover:bg-amber-600">Booked</Badge>
-      case "UNDER_MAINTENANCE": return <Badge variant="destructive">Maintenance</Badge>
-      default: return <Badge variant="outline">{status}</Badge>
+    switch (status) {
+      case "AVAILABLE":
+        return (
+          <Badge className="bg-emerald-500 hover:bg-emerald-600">
+            Available
+          </Badge>
+        )
+      case "BOOKED":
+        return (
+          <Badge
+            variant="secondary"
+            className="bg-amber-500 text-white hover:bg-amber-600"
+          >
+            Booked
+          </Badge>
+        )
+      case "UNDER_MAINTENANCE":
+        return <Badge variant="destructive">Maintenance</Badge>
+      default:
+        return <Badge variant="outline">{status}</Badge>
     }
   }
 
@@ -262,9 +312,14 @@ function AdminVehicles() {
             <Car className="h-8 w-8 text-primary" />
             Vehicle Inventory
           </h1>
-          <p className="text-muted-foreground mt-1">Manage fleet, pricing, and availability status.</p>
+          <p className="text-muted-foreground mt-1">
+            Manage fleet, pricing, and availability status.
+          </p>
         </div>
-        <Button onClick={() => openForm()} className="bg-primary text-primary-foreground">
+        <Button
+          onClick={() => openForm()}
+          className="bg-primary text-primary-foreground"
+        >
           <Plus className="h-4 w-4 mr-2" /> Add Vehicle
         </Button>
       </div>
@@ -274,8 +329,8 @@ function AdminVehicles() {
           <div className="flex items-center gap-2 w-full md:w-auto">
             <div className="relative w-full md:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search brand, model..." 
+              <Input
+                placeholder="Search brand, model..."
                 className="pl-9"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
@@ -283,7 +338,13 @@ function AdminVehicles() {
             </div>
           </div>
           <div className="flex items-center gap-2 w-full md:w-auto">
-            <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setCurrentPage(1); }}>
+            <Select
+              value={typeFilter}
+              onValueChange={(v) => {
+                setTypeFilter(v)
+                setCurrentPage(1)
+              }}
+            >
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
@@ -293,7 +354,13 @@ function AdminVehicles() {
                 <SelectItem value="Bike">Bike</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}>
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => {
+                setStatusFilter(v)
+                setCurrentPage(1)
+              }}
+            >
               <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -328,7 +395,10 @@ function AdminVehicles() {
                 </TableRow>
               ) : vehicles.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-48 text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={6}
+                    className="h-48 text-center text-muted-foreground"
+                  >
                     No vehicles found.
                   </TableCell>
                 </TableRow>
@@ -338,7 +408,11 @@ function AdminVehicles() {
                     <TableCell>
                       {v.image_url ? (
                         <div className="w-16 h-10 rounded overflow-hidden bg-muted flex items-center justify-center">
-                          <img src={v.image_url} alt={v.model} className="w-full h-full object-cover" />
+                          <img
+                            src={v.image_url}
+                            alt={v.model}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                       ) : (
                         <div className="w-16 h-10 rounded bg-muted flex items-center justify-center border border-border">
@@ -347,20 +421,38 @@ function AdminVehicles() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="font-semibold text-foreground">{v.brand} {v.model}</div>
-                      <div className="text-xs text-muted-foreground">ID: {v.id?.split('-')[0]}</div>
+                      <div className="font-semibold text-foreground">
+                        {v.brand} {v.model}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        ID: {v.id?.split("-")[0]}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="font-medium">{v.type}</div>
-                      <div className="text-xs text-muted-foreground">{v.year}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {v.year}
+                      </div>
                     </TableCell>
-                    <TableCell className="font-semibold text-primary">RM {v.rental_rate}</TableCell>
-                    <TableCell>{getStatusBadge(v.availability_status)}</TableCell>
+                    <TableCell className="font-semibold text-primary">
+                      RM {v.rental_rate}
+                    </TableCell>
+                    <TableCell>
+                      {getStatusBadge(v.availability_status)}
+                    </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => openForm(v)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openForm(v)}
+                      >
                         <Edit className="h-4 w-4 text-blue-500" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => confirmDelete(v)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => confirmDelete(v)}
+                      >
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
                     </TableCell>
@@ -370,29 +462,31 @@ function AdminVehicles() {
             </TableBody>
           </Table>
         </div>
-        
+
         {/* Pagination Info */}
         <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
           <div>
-            Showing {(currentPage - 1) * 10 + 1} to {Math.min(currentPage * 10, totalElements)} of {totalElements} vehicles
+            Showing {(currentPage - 1) * 10 + 1} to{" "}
+            {Math.min(currentPage * 10, totalElements)} of {totalElements}{" "}
+            vehicles
           </div>
           <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               disabled={currentPage === 1}
-              onClick={() => setCurrentPage(p => p - 1)}
+              onClick={() => setCurrentPage((p) => p - 1)}
             >
               Previous
             </Button>
             <span className="px-2 font-medium text-foreground">
               {currentPage} / {totalPages}
             </span>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               disabled={currentPage === totalPages || totalPages === 0}
-              onClick={() => setCurrentPage(p => p + 1)}
+              onClick={() => setCurrentPage((p) => p + 1)}
             >
               Next
             </Button>
@@ -405,7 +499,9 @@ function AdminVehicles() {
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>{editingVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}</DialogTitle>
+              <DialogTitle>
+                {editingVehicle ? "Edit Vehicle" : "Add New Vehicle"}
+              </DialogTitle>
               <DialogDescription>
                 Fill in the details for the vehicle below.
               </DialogDescription>
@@ -414,30 +510,34 @@ function AdminVehicles() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="brand">Brand</Label>
-                  <Input 
-                    id="brand" 
-                    value={formData.brand} 
-                    onChange={e => setFormData({...formData, brand: e.target.value})} 
-                    required 
+                  <Input
+                    id="brand"
+                    value={formData.brand}
+                    onChange={(e) =>
+                      setFormData({ ...formData, brand: e.target.value })
+                    }
+                    required
                     list="brand-suggestions"
                   />
                   <datalist id="brand-suggestions">
-                    {suggestionBrands.map(b => (
+                    {suggestionBrands.map((b) => (
                       <option key={b} value={b} />
                     ))}
                   </datalist>
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="model">Model</Label>
-                  <Input 
-                    id="model" 
-                    value={formData.model} 
-                    onChange={e => setFormData({...formData, model: e.target.value})} 
-                    required 
+                  <Input
+                    id="model"
+                    value={formData.model}
+                    onChange={(e) =>
+                      setFormData({ ...formData, model: e.target.value })
+                    }
+                    required
                     list="model-suggestions"
                   />
                   <datalist id="model-suggestions">
-                    {suggestionModels.map(m => (
+                    {suggestionModels.map((m) => (
                       <option key={m} value={m} />
                     ))}
                   </datalist>
@@ -446,16 +546,19 @@ function AdminVehicles() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="type">Vehicle Type</Label>
-                  <Tabs value={formData.type} onValueChange={v => setFormData({...formData, type: v})}>
+                  <Tabs
+                    value={formData.type}
+                    onValueChange={(v) => setFormData({ ...formData, type: v })}
+                  >
                     <TabsList className="w-full bg-background border border-border">
-                      <TabsTrigger 
-                        value="Car" 
+                      <TabsTrigger
+                        value="Car"
                         className="flex-1 gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground"
                       >
                         <Car className="h-4 w-4" /> Car
                       </TabsTrigger>
-                      <TabsTrigger 
-                        value="Bike" 
+                      <TabsTrigger
+                        value="Bike"
                         className="flex-1 gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground"
                       >
                         <Bike className="h-4 w-4" /> Bike
@@ -465,26 +568,47 @@ function AdminVehicles() {
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="year">Year</Label>
-                  <Input 
-                    id="year" 
+                  <Input
+                    id="year"
                     type="number"
-                    value={formData.year} 
-                    onChange={e => setFormData({...formData, year: parseInt(e.target.value) || new Date().getFullYear()})} 
-                    required 
+                    value={formData.year}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        year:
+                          parseInt(e.target.value, 10) ||
+                          new Date().getFullYear(),
+                      })
+                    }
+                    required
                   />
                 </div>
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="status">Availability Status</Label>
-                <Tabs value={formData.availabilityStatus} onValueChange={v => setFormData({...formData, availabilityStatus: v})}>
+                <Tabs
+                  value={formData.availabilityStatus}
+                  onValueChange={(v) =>
+                    setFormData({ ...formData, availabilityStatus: v })
+                  }
+                >
                   <TabsList className="w-full grid grid-cols-3 bg-background border border-border">
-                    <TabsTrigger value="AVAILABLE" className="gap-2 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-600 dark:data-[state=active]:bg-emerald-900/20">
+                    <TabsTrigger
+                      value="AVAILABLE"
+                      className="gap-2 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-600 dark:data-[state=active]:bg-emerald-900/20"
+                    >
                       <Check className="h-3.5 w-3.5" /> Available
                     </TabsTrigger>
-                    <TabsTrigger value="BOOKED" className="gap-2 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-600 dark:data-[state=active]:bg-amber-900/20">
+                    <TabsTrigger
+                      value="BOOKED"
+                      className="gap-2 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-600 dark:data-[state=active]:bg-amber-900/20"
+                    >
                       <Loader2 className="h-3.5 w-3.5" /> Booked
                     </TabsTrigger>
-                    <TabsTrigger value="UNDER_MAINTENANCE" className="gap-2 data-[state=active]:bg-red-50 data-[state=active]:text-red-600 dark:data-[state=active]:bg-red-900/20">
+                    <TabsTrigger
+                      value="UNDER_MAINTENANCE"
+                      className="gap-2 data-[state=active]:bg-red-50 data-[state=active]:text-red-600 dark:data-[state=active]:bg-red-900/20"
+                    >
                       <Settings className="h-3.5 w-3.5" /> Maintenance
                     </TabsTrigger>
                   </TabsList>
@@ -494,24 +618,34 @@ function AdminVehicles() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="rate">Rental Rate (RM/day)</Label>
-                  <Input 
-                    id="rate" 
+                  <Input
+                    id="rate"
                     type="number"
                     step="0.01"
-                    value={formData.rentalRate} 
-                    onChange={e => setFormData({...formData, rentalRate: parseFloat(e.target.value) || 0})} 
-                    required 
+                    value={formData.rentalRate}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        rentalRate: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    required
                   />
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="discount">Discount (%)</Label>
-                  <Input 
-                    id="discount" 
+                  <Input
+                    id="discount"
                     type="number"
                     min="0"
                     max="100"
-                    value={formData.discount} 
-                    onChange={e => setFormData({...formData, discount: parseFloat(e.target.value) || 0})} 
+                    value={formData.discount}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        discount: parseFloat(e.target.value) || 0,
+                      })
+                    }
                   />
                 </div>
               </div>
@@ -519,20 +653,40 @@ function AdminVehicles() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="seats">Seats</Label>
-                  <Input 
-                    id="seats" 
+                  <Input
+                    id="seats"
                     type="number"
-                    value={formData.seats} 
-                    onChange={e => setFormData({...formData, seats: parseInt(e.target.value) || 4})} 
-                    required 
+                    value={formData.seats}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        seats: parseInt(e.target.value, 10) || 4,
+                      })
+                    }
+                    required
                   />
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="transmission">Transmission</Label>
-                  <Tabs value={formData.transmission} onValueChange={v => setFormData({...formData, transmission: v})}>
+                  <Tabs
+                    value={formData.transmission}
+                    onValueChange={(v) =>
+                      setFormData({ ...formData, transmission: v })
+                    }
+                  >
                     <TabsList className="w-full bg-background border border-border">
-                      <TabsTrigger value="MANUAL" className="flex-1 data-[state=active]:bg-muted data-[state=active]:text-foreground">Manual</TabsTrigger>
-                      <TabsTrigger value="AUTOMATIC" className="flex-1 data-[state=active]:bg-muted data-[state=active]:text-foreground">Automatic</TabsTrigger>
+                      <TabsTrigger
+                        value="MANUAL"
+                        className="flex-1 data-[state=active]:bg-muted data-[state=active]:text-foreground"
+                      >
+                        Manual
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="AUTOMATIC"
+                        className="flex-1 data-[state=active]:bg-muted data-[state=active]:text-foreground"
+                      >
+                        Automatic
+                      </TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </div>
@@ -540,11 +694,13 @@ function AdminVehicles() {
 
               <div className="flex flex-col gap-2">
                 <Label htmlFor="description">Description</Label>
-                <textarea 
+                <textarea
                   id="description"
                   className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   value={formData.description}
-                  onChange={e => setFormData({...formData, description: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   placeholder="Describe the vehicle details..."
                 />
               </div>
@@ -552,21 +708,42 @@ function AdminVehicles() {
               <div className="flex flex-col gap-2">
                 <Label>Features</Label>
                 <div className="grid grid-cols-2 gap-2 border rounded-md p-3 max-h-[120px] overflow-y-auto">
-                  {['AC', 'BLUETOOTH', 'GPS', 'SUNROOF', 'REAR_CAMERA', 'LEATHER_SEATS', 'USB_CHARGER', 'AIR_BAG', 'MUSIC_SYSTEM'].map(feature => (
-                    <label key={feature} className="flex items-center gap-2 text-xs cursor-pointer">
-                      <input 
+                  {[
+                    "AC",
+                    "BLUETOOTH",
+                    "GPS",
+                    "SUNROOF",
+                    "REAR_CAMERA",
+                    "LEATHER_SEATS",
+                    "USB_CHARGER",
+                    "AIR_BAG",
+                    "MUSIC_SYSTEM",
+                  ].map((feature) => (
+                    <label
+                      key={feature}
+                      className="flex items-center gap-2 text-xs cursor-pointer"
+                    >
+                      <input
                         type="checkbox"
                         checked={formData.features?.includes(feature)}
                         onChange={(e) => {
                           const currentFeatures = formData.features || []
                           if (e.target.checked) {
-                            setFormData({...formData, features: [...currentFeatures, feature]})
+                            setFormData({
+                              ...formData,
+                              features: [...currentFeatures, feature],
+                            })
                           } else {
-                            setFormData({...formData, features: currentFeatures.filter(f => f !== feature)})
+                            setFormData({
+                              ...formData,
+                              features: currentFeatures.filter(
+                                (f) => f !== feature,
+                              ),
+                            })
                           }
                         }}
                       />
-                      {feature.replace(/_/g, ' ')}
+                      {feature.replace(/_/g, " ")}
                     </label>
                   ))}
                 </div>
@@ -574,12 +751,37 @@ function AdminVehicles() {
 
               <div className="flex flex-col gap-2">
                 <Label htmlFor="fuelType">Fuel Type</Label>
-                <Tabs value={formData.fuelType} onValueChange={v => setFormData({...formData, fuelType: v})}>
+                <Tabs
+                  value={formData.fuelType}
+                  onValueChange={(v) =>
+                    setFormData({ ...formData, fuelType: v })
+                  }
+                >
                   <TabsList className="w-full grid grid-cols-4 bg-background border border-border">
-                    <TabsTrigger value="Petrol" className="data-[state=active]:bg-muted data-[state=active]:text-foreground">Petrol</TabsTrigger>
-                    <TabsTrigger value="Diesel" className="data-[state=active]:bg-muted data-[state=active]:text-foreground">Diesel</TabsTrigger>
-                    <TabsTrigger value="Electric" className="data-[state=active]:bg-muted data-[state=active]:text-foreground">Electric</TabsTrigger>
-                    <TabsTrigger value="Hybrid" className="data-[state=active]:bg-muted data-[state=active]:text-foreground">Hybrid</TabsTrigger>
+                    <TabsTrigger
+                      value="Petrol"
+                      className="data-[state=active]:bg-muted data-[state=active]:text-foreground"
+                    >
+                      Petrol
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="Diesel"
+                      className="data-[state=active]:bg-muted data-[state=active]:text-foreground"
+                    >
+                      Diesel
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="Electric"
+                      className="data-[state=active]:bg-muted data-[state=active]:text-foreground"
+                    >
+                      Electric
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="Hybrid"
+                      className="data-[state=active]:bg-muted data-[state=active]:text-foreground"
+                    >
+                      Hybrid
+                    </TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
@@ -588,13 +790,17 @@ function AdminVehicles() {
                 <div className="flex items-center gap-4">
                   <div className="w-24 h-16 bg-muted rounded border border-border flex items-center justify-center overflow-hidden shrink-0">
                     {imagePreview ? (
-                      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <ImageIcon className="h-6 w-6 text-muted-foreground" />
                     )}
                   </div>
-                  <Input 
-                    id="image" 
+                  <Input
+                    id="image"
                     type="file"
                     accept="image/*"
                     onChange={handleImageChange}
@@ -604,10 +810,17 @@ function AdminVehicles() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={closeForm}>Cancel</Button>
-              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {editingVehicle ? 'Save Changes' : 'Create Vehicle'}
+              <Button type="button" variant="outline" onClick={closeForm}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                {(createMutation.isPending || updateMutation.isPending) && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {editingVehicle ? "Save Changes" : "Create Vehicle"}
               </Button>
             </DialogFooter>
           </form>
@@ -619,21 +832,31 @@ function AdminVehicles() {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle className="text-destructive flex items-center gap-2">
-              <Trash2 className="h-5 w-5" /> 
+              <Trash2 className="h-5 w-5" />
               Confirm Deletion
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete <strong>{editingVehicle?.brand} {editingVehicle?.model}</strong>? This action cannot be undone.
+              Are you sure you want to delete{" "}
+              <strong>
+                {editingVehicle?.brand} {editingVehicle?.model}
+              </strong>
+              ? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
-            <Button 
-              variant="destructive" 
-              onClick={() => editingVehicle?.id && deleteMutation.mutate(editingVehicle.id)}
+            <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() =>
+                editingVehicle?.id && deleteMutation.mutate(editingVehicle.id)
+              }
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {deleteMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Delete Vehicle
             </Button>
           </DialogFooter>
@@ -678,7 +901,9 @@ function AdminVehicles() {
               <ZoomIn className="h-4 w-4 text-muted-foreground" />
             </div>
             <DialogFooter className="pt-2">
-              <Button variant="outline" onClick={() => setIsCropperOpen(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setIsCropperOpen(false)}>
+                Cancel
+              </Button>
               <Button onClick={handleSaveCrop}>Apply Crop</Button>
             </DialogFooter>
           </div>

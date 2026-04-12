@@ -49,21 +49,21 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initializeVehicles() {
-        seedVehicle("Car", "Toyota", "Vios", 2023, 150, 5, "Petrol", "seeds/images/toyota_vios.png");
-        seedVehicle("Car", "Toyota", "Yaris", 2023, 160, 5, "Petrol", "seeds/images/toyota_yaris.png");
-        seedVehicle("Car", "Toyota", "Camry", 2023, 350, 5, "Petrol", "seeds/images/toyota_camry.png");
-        seedVehicle("Car", "Toyota", "Corolla", 2023, 200, 5, "Petrol", "seeds/images/toyota_corolla.png");
-        seedVehicle("Car", "Toyota", "Hilux", 2023, 250, 5, "Diesel", "seeds/images/toyota_hilux.png");
-        seedVehicle("Car", "Toyota", "Vellfire", 2023, 600, 7, "Petrol", "seeds/images/toyota_vellfire.png");
-        seedVehicle("Car", "Toyota", "Alphard", 2023, 650, 7, "Petrol", "seeds/images/toyota_alphard.png");
-        seedVehicle("Car", "Honda", "City", 2023, 150, 5, "Petrol", "seeds/images/honda_city.png");
-        seedVehicle("Car", "Honda", "Civic", 2023, 250, 5, "Petrol", "seeds/images/honda_civic.png");
-        seedVehicle("Car", "Honda", "Accord", 2023, 350, 5, "Petrol", "seeds/images/honda_accord.png");
-        seedVehicle("Car", "Honda", "HR-V", 2023, 220, 5, "Petrol", "seeds/images/honda_hrv.png");
-        seedVehicle("Car", "Honda", "CR-V", 2023, 300, 5, "Petrol", "seeds/images/honda_crv.png");
-        seedVehicle("Car", "Honda", "BR-V", 2023, 180, 7, "Petrol", "seeds/images/honda_brv.png");
-        seedVehicle("Car", "Honda", "Jazz", 2023, 140, 5, "Petrol", "seeds/images/honda_jazz.png");
-        seedVehicle("Car", "Perodua", "Myvi", 2023, 120, 5, "Petrol", "seeds/images/perodua_myvi.png");
+        seedVehicle("Car", "Toyota", "Vios", 2023, 150, 5, "Petrol", "toyota_vios.png");
+        seedVehicle("Car", "Toyota", "Yaris", 2023, 160, 5, "Petrol", "toyota_yaris.png");
+        seedVehicle("Car", "Toyota", "Camry", 2023, 350, 5, "Petrol", "toyota_camry.png");
+        seedVehicle("Car", "Toyota", "Corolla", 2023, 200, 5, "Petrol", "toyota_corolla.png");
+        seedVehicle("Car", "Toyota", "Hilux", 2023, 250, 5, "Diesel", "toyota_hilux.png");
+        seedVehicle("Car", "Toyota", "Vellfire", 2023, 600, 7, "Petrol", "toyota_vellfire.png");
+        seedVehicle("Car", "Toyota", "Alphard", 2023, 650, 7, "Petrol", "toyota_alphard.png");
+        seedVehicle("Car", "Honda", "City", 2023, 150, 5, "Petrol", "honda_city.png");
+        seedVehicle("Car", "Honda", "Civic", 2023, 250, 5, "Petrol", "honda_civic.png");
+        seedVehicle("Car", "Honda", "Accord", 2023, 350, 5, "Petrol", "honda_accord.png");
+        seedVehicle("Car", "Honda", "HR-V", 2023, 220, 5, "Petrol", "honda_hrv.png");
+        seedVehicle("Car", "Honda", "CR-V", 2023, 300, 5, "Petrol", "honda_crv.png");
+        seedVehicle("Car", "Honda", "BR-V", 2023, 180, 7, "Petrol", "honda_brv.png");
+        seedVehicle("Car", "Honda", "Jazz", 2023, 140, 5, "Petrol", "honda_jazz.png");
+        seedVehicle("Car", "Perodua", "Myvi", 2023, 120, 5, "Petrol", "perodua_myvi.png");
     }
 
     private void seedVehicle(String type, String brand, String model, int year, double rate, int seats, String fuel, String imageUrl) {

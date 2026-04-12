@@ -1,9 +1,9 @@
 export const createImage = (url: string): Promise<HTMLImageElement> =>
   new Promise((resolve, reject) => {
     const image = new Image()
-    image.addEventListener('load', () => resolve(image))
-    image.addEventListener('error', (error) => reject(error))
-    image.setAttribute('crossOrigin', 'anonymous')
+    image.addEventListener("load", () => resolve(image))
+    image.addEventListener("error", (error) => reject(error))
+    image.setAttribute("crossOrigin", "anonymous")
     image.src = url
   })
 
@@ -32,11 +32,11 @@ export default async function getCroppedImg(
   imageSrc: string,
   pixelCrop: { x: number; y: number; width: number; height: number },
   rotation = 0,
-  flip = { horizontal: false, vertical: false }
+  flip = { horizontal: false, vertical: false },
 ): Promise<Blob | null> {
   const image = await createImage(imageSrc)
-  const canvas = document.createElement('canvas')
-  const ctx = canvas.getContext('2d')
+  const canvas = document.createElement("canvas")
+  const ctx = canvas.getContext("2d")
 
   if (!ctx) {
     return null
@@ -48,7 +48,7 @@ export default async function getCroppedImg(
   const { width: bBoxWidth, height: bBoxHeight } = rotateSize(
     image.width,
     image.height,
-    rotation
+    rotation,
   )
 
   // set canvas size to match the bounding box
@@ -56,7 +56,7 @@ export default async function getCroppedImg(
   canvas.height = bBoxHeight
 
   // fill background with white
-  ctx.fillStyle = '#ffffff'
+  ctx.fillStyle = "#ffffff"
   ctx.fillRect(0, 0, bBoxWidth, bBoxHeight)
 
   // translate canvas context to a central point to allow rotating and flipping around the center
@@ -69,8 +69,8 @@ export default async function getCroppedImg(
   ctx.drawImage(image, 0, 0)
 
   // create second canvas for the final crop
-  const cropCanvas = document.createElement('canvas')
-  const cropCtx = cropCanvas.getContext('2d')
+  const cropCanvas = document.createElement("canvas")
+  const cropCtx = cropCanvas.getContext("2d")
 
   if (!cropCtx) {
     return null
@@ -81,7 +81,7 @@ export default async function getCroppedImg(
   cropCanvas.height = pixelCrop.height
 
   // fill background with white again for final crop area
-  cropCtx.fillStyle = '#ffffff'
+  cropCtx.fillStyle = "#ffffff"
   cropCtx.fillRect(0, 0, pixelCrop.width, pixelCrop.height)
 
   // draw the rotated canvas onto the crop canvas
@@ -94,13 +94,13 @@ export default async function getCroppedImg(
     0,
     0,
     pixelCrop.width,
-    pixelCrop.height
+    pixelCrop.height,
   )
 
   // As a blob
   return new Promise((resolve) => {
     cropCanvas.toBlob((file) => {
       resolve(file)
-    }, 'image/jpeg')
+    }, "image/jpeg")
   })
 }

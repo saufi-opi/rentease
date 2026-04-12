@@ -62,7 +62,8 @@ Located at `backend/src/main/java/com/rentease/backend/`:
 
 - `auth/` — JWT authentication: `AuthController` (login), `JwtTokenProvider`, `JwtAuthenticationFilter`, `SecurityConfig`
 - `user/` — User management: CRUD, role-based access (`ADMIN`, `TOP_MANAGEMENT`, regular users)
-- `vehicle/` — Vehicle CRUD with pagination/filtering via `VehicleSpecification` (JPA Criteria)
+- `vehicle/` — Vehicle CRUD with pagination/filtering via `VehicleSpecification` (JPA Criteria). Supports filtering by type, brand, keyword, price range, and date-range availability (subquery excludes vehicles with overlapping non-cancelled bookings). Key enums: `AvailabilityStatus` (`AVAILABLE`, `RENTED`, `MAINTENANCE`), `TransmissionType`, `VehicleFeature`.
+- `booking/` — Booking lifecycle: customers create bookings (`PENDING`), admins approve/reject via status update. Bookings include a `confirmationRef` UUID. Customers can cancel their own bookings; admins see all with pagination and status filter.
 - `common/` — Cross-cutting: `GlobalExceptionHandler`, `FileStorageService` (local `uploads/` dir), `DataInitializer` (seeds default admin on startup), `WebMvcConfig` (CORS, static file serving)
 
 **API base path**: `/api/v1/`
@@ -85,7 +86,7 @@ Located at `frontend/src/`:
   - `login.tsx`, `signup.tsx` — public pages
   - `_layout.tsx` — authenticated user layout (header + profile sidebar). Guards with `isLoggedIn()`.
   - `_layout/` — user-facing pages: `bookings.tsx`, `favourites.tsx`, `profile.tsx`
-  - `vehicles/` — public vehicle listing (`index.tsx`) and detail (`$id.tsx`)
+  - `vehicles/` — public vehicle listing (`index.tsx`), detail (`$id/index.tsx`), and booking form (`$id/book.tsx`). The booking form accepts `?pickup=` and `?return=` search params, calculates cost client-side using `rental_rate` and `discount`, and requires authentication.
   - `admin/_layout.tsx` — admin layout (sidebar + header). Guards: authenticated + role `ADMIN` or `TOP_MANAGEMENT`.
   - `admin/_layout/` — admin pages: `dashboard.tsx`, `vehicles.tsx`, `bookings.tsx`
 - `components/` — UI components using shadcn/ui (Radix UI primitives + Tailwind)
@@ -95,6 +96,8 @@ Located at `frontend/src/`:
 **State management**: TanStack Query for server state. The `queryClient` is exported from `lib/react-query` and used for prefetching in route `beforeLoad` guards.
 
 **API client usage**: Import generated service classes from `@/client`, e.g. `UserControllerService.getCurrentUser()`. The client is configured with axios and uses `VITE_API_URL` env var (defaults to `http://localhost:8081`).
+
+**Currency**: Prices are in Malaysian Ringgit (RM). `rental_rate` and `discounted_price` fields are `BigDecimal` on the backend; displayed as `RM X.XX` in the UI.
 
 ### Auth Flow
 

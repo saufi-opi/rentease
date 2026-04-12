@@ -3,10 +3,10 @@ import { useNavigate } from "@tanstack/react-router"
 
 import {
   AuthControllerService,
-  UserControllerService,
-  type UserResponse,
-  type UserRegistrationRequest,
   type LoginRequest,
+  UserControllerService,
+  type UserRegistrationRequest,
+  type UserResponse,
 } from "@/client"
 import { setAccessToken } from "@/lib/axios"
 import { handleError } from "@/utils"
@@ -32,7 +32,7 @@ const useAuth = () => {
     queryFn: async () => {
       try {
         return await UserControllerService.getCurrentUser()
-      } catch (error) {
+      } catch (_error) {
         logout()
         return null
       }

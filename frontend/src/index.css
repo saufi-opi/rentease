@@ -121,8 +121,7 @@ html {
   font-family:
     "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
-  font-feature-settings:
-    "cv02", "cv03", "cv04", "cv11";
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   /* Better Inter numerals and chars */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -202,7 +201,6 @@ html {
 
 /* Animations */
 @keyframes bell-ring {
-
   0%,
   100% {
     transform: rotate(0deg);
@@ -267,7 +265,6 @@ html {
 
 /* Respect user motion preferences */
 @media (prefers-reduced-motion: reduce) {
-
   .animate-page-enter,
   .animate-fade-in,
   .animate-slide-up {

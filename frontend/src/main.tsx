@@ -5,14 +5,14 @@ import { ThemeProvider } from "./components/theme-provider"
 import { Toaster } from "./components/ui/sonner"
 import "./index.css"
 import "./lib/axios" // Import to execute the Axios setup side-effects
+import { NotFound } from "./components/common/NotFound"
 import { queryClient } from "./lib/react-query"
 import { routeTree } from "./routeTree.gen"
-import { NotFound } from "./components/common/NotFound"
 
-const router = createRouter({ 
-  routeTree, 
+const router = createRouter({
+  routeTree,
   defaultPreload: "intent",
-  defaultNotFoundComponent: NotFound
+  defaultNotFoundComponent: NotFound,
 })
 declare module "@tanstack/react-router" {
   interface Register {
@@ -21,10 +21,10 @@ declare module "@tanstack/react-router" {
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-        <Toaster richColors closeButton position="top-right" />
-      </QueryClientProvider>
-    </ThemeProvider>
+  <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+      <Toaster richColors closeButton position="top-right" />
+    </QueryClientProvider>
+  </ThemeProvider>,
 )

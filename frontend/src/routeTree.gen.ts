@@ -22,6 +22,8 @@ import { Route as AdminLayoutRouteImport } from './routes/admin/_layout'
 import { Route as LayoutProfileRouteImport } from './routes/_layout/profile'
 import { Route as LayoutFavouritesRouteImport } from './routes/_layout/favourites'
 import { Route as LayoutBookingsRouteImport } from './routes/_layout/bookings'
+import { Route as VehiclesIdIndexRouteImport } from './routes/vehicles/$id/index'
+import { Route as VehiclesIdBookRouteImport } from './routes/vehicles/$id/book'
 import { Route as AdminLayoutVehiclesRouteImport } from './routes/admin/_layout/vehicles'
 import { Route as AdminLayoutDashboardRouteImport } from './routes/admin/_layout/dashboard'
 import { Route as AdminLayoutBookingsRouteImport } from './routes/admin/_layout/bookings'
@@ -86,6 +88,16 @@ const LayoutBookingsRoute = LayoutBookingsRouteImport.update({
   path: '/bookings',
   getParentRoute: () => LayoutRoute,
 } as any)
+const VehiclesIdIndexRoute = VehiclesIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => VehiclesIdRoute,
+} as any)
+const VehiclesIdBookRoute = VehiclesIdBookRouteImport.update({
+  id: '/book',
+  path: '/book',
+  getParentRoute: () => VehiclesIdRoute,
+} as any)
 const AdminLayoutVehiclesRoute = AdminLayoutVehiclesRouteImport.update({
   id: '/vehicles',
   path: '/vehicles',
@@ -110,12 +122,14 @@ export interface FileRoutesByFullPath {
   '/favourites': typeof LayoutFavouritesRoute
   '/profile': typeof LayoutProfileRoute
   '/admin': typeof AdminLayoutRouteWithChildren
-  '/vehicles/$id': typeof VehiclesIdRoute
+  '/vehicles/$id': typeof VehiclesIdRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/vehicles': typeof VehiclesIndexRoute
   '/admin/bookings': typeof AdminLayoutBookingsRoute
   '/admin/dashboard': typeof AdminLayoutDashboardRoute
   '/admin/vehicles': typeof AdminLayoutVehiclesRoute
+  '/vehicles/$id/book': typeof VehiclesIdBookRoute
+  '/vehicles/$id/': typeof VehiclesIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -125,11 +139,12 @@ export interface FileRoutesByTo {
   '/favourites': typeof LayoutFavouritesRoute
   '/profile': typeof LayoutProfileRoute
   '/admin': typeof AdminIndexRoute
-  '/vehicles/$id': typeof VehiclesIdRoute
   '/vehicles': typeof VehiclesIndexRoute
   '/admin/bookings': typeof AdminLayoutBookingsRoute
   '/admin/dashboard': typeof AdminLayoutDashboardRoute
   '/admin/vehicles': typeof AdminLayoutVehiclesRoute
+  '/vehicles/$id/book': typeof VehiclesIdBookRoute
+  '/vehicles/$id': typeof VehiclesIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -142,12 +157,14 @@ export interface FileRoutesById {
   '/_layout/profile': typeof LayoutProfileRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin/_layout': typeof AdminLayoutRouteWithChildren
-  '/vehicles/$id': typeof VehiclesIdRoute
+  '/vehicles/$id': typeof VehiclesIdRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/vehicles/': typeof VehiclesIndexRoute
   '/admin/_layout/bookings': typeof AdminLayoutBookingsRoute
   '/admin/_layout/dashboard': typeof AdminLayoutDashboardRoute
   '/admin/_layout/vehicles': typeof AdminLayoutVehiclesRoute
+  '/vehicles/$id/book': typeof VehiclesIdBookRoute
+  '/vehicles/$id/': typeof VehiclesIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -165,6 +182,8 @@ export interface FileRouteTypes {
     | '/admin/bookings'
     | '/admin/dashboard'
     | '/admin/vehicles'
+    | '/vehicles/$id/book'
+    | '/vehicles/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -174,11 +193,12 @@ export interface FileRouteTypes {
     | '/favourites'
     | '/profile'
     | '/admin'
-    | '/vehicles/$id'
     | '/vehicles'
     | '/admin/bookings'
     | '/admin/dashboard'
     | '/admin/vehicles'
+    | '/vehicles/$id/book'
+    | '/vehicles/$id'
   id:
     | '__root__'
     | '/'
@@ -196,6 +216,8 @@ export interface FileRouteTypes {
     | '/admin/_layout/bookings'
     | '/admin/_layout/dashboard'
     | '/admin/_layout/vehicles'
+    | '/vehicles/$id/book'
+    | '/vehicles/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -204,7 +226,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   AdminRoute: typeof AdminRouteWithChildren
-  VehiclesIdRoute: typeof VehiclesIdRoute
+  VehiclesIdRoute: typeof VehiclesIdRouteWithChildren
   VehiclesIndexRoute: typeof VehiclesIndexRoute
 }
 
@@ -294,6 +316,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutBookingsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/vehicles/$id/': {
+      id: '/vehicles/$id/'
+      path: '/'
+      fullPath: '/vehicles/$id/'
+      preLoaderRoute: typeof VehiclesIdIndexRouteImport
+      parentRoute: typeof VehiclesIdRoute
+    }
+    '/vehicles/$id/book': {
+      id: '/vehicles/$id/book'
+      path: '/book'
+      fullPath: '/vehicles/$id/book'
+      preLoaderRoute: typeof VehiclesIdBookRouteImport
+      parentRoute: typeof VehiclesIdRoute
+    }
     '/admin/_layout/vehicles': {
       id: '/admin/_layout/vehicles'
       path: '/vehicles'
@@ -361,13 +397,27 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface VehiclesIdRouteChildren {
+  VehiclesIdBookRoute: typeof VehiclesIdBookRoute
+  VehiclesIdIndexRoute: typeof VehiclesIdIndexRoute
+}
+
+const VehiclesIdRouteChildren: VehiclesIdRouteChildren = {
+  VehiclesIdBookRoute: VehiclesIdBookRoute,
+  VehiclesIdIndexRoute: VehiclesIdIndexRoute,
+}
+
+const VehiclesIdRouteWithChildren = VehiclesIdRoute._addFileChildren(
+  VehiclesIdRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LayoutRoute: LayoutRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   AdminRoute: AdminRouteWithChildren,
-  VehiclesIdRoute: VehiclesIdRoute,
+  VehiclesIdRoute: VehiclesIdRouteWithChildren,
   VehiclesIndexRoute: VehiclesIndexRoute,
 }
 export const routeTree = rootRouteImport

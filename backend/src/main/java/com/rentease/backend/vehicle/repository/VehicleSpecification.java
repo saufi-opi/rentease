@@ -1,8 +1,13 @@
 package com.rentease.backend.vehicle.repository;
 
+import com.rentease.backend.booking.model.Booking;
+import com.rentease.backend.booking.model.BookingStatus;
 import com.rentease.backend.vehicle.model.AvailabilityStatus;
 import com.rentease.backend.vehicle.model.Vehicle;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
+import java.time.LocalDate;
 
 public class VehicleSpecification {
 
@@ -42,5 +47,36 @@ public class VehicleSpecification {
     public static Specification<Vehicle> isAvailableForCustomer() {
         return (root, query, cb) ->
             cb.equal(root.get("availabilityStatus"), AvailabilityStatus.AVAILABLE);
+    }
+
+    /**
+     * Excludes vehicles that have any non-cancelled booking overlapping [startDate, endDate).
+     * Used when the customer provides a date range on the browse page.
+     */
+    public static Specification<Vehicle> isAvailableForDates(LocalDate startDate, LocalDate endDate) {
+        return (root, query, cb) -> {
+            if (startDate == null || endDate == null) return null;
+            Subquery<Long> sub = query.subquery(Long.class);
+            Root<Booking> bookingRoot = sub.from(Booking.class);
+            sub.select(cb.literal(1L));
+            sub.where(cb.and(
+                    cb.equal(bookingRoot.get("vehicle").get("id"), root.get("id")),
+                    cb.notEqual(bookingRoot.get("status"), BookingStatus.CANCELLED),
+                    cb.lessThan(bookingRoot.get("startDate"), endDate),
+                    cb.greaterThan(bookingRoot.get("endDate"), startDate)
+            ));
+            return cb.not(cb.exists(sub));
+        };
+    }
+
+    public static Specification<Vehicle> hasPriceRange(java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice) {
+        return (root, query, cb) -> {
+            if (minPrice == null && maxPrice == null) return null;
+            if (minPrice != null && maxPrice != null)
+                return cb.between(root.get("rentalRate"), minPrice, maxPrice);
+            if (minPrice != null)
+                return cb.greaterThanOrEqualTo(root.get("rentalRate"), minPrice);
+            return cb.lessThanOrEqualTo(root.get("rentalRate"), maxPrice);
+        };
     }
 }

@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @RestController
@@ -29,9 +31,14 @@ public class VehicleController {
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String brand,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false, name = "sort_by") String sortBy
+            @RequestParam(required = false, name = "sort_by") String sortBy,
+            @RequestParam(required = false, name = "min_price") BigDecimal minPrice,
+            @RequestParam(required = false, name = "max_price") BigDecimal maxPrice,
+            @RequestParam(required = false, name = "available_from") LocalDate availableFrom,
+            @RequestParam(required = false, name = "available_to") LocalDate availableTo
     ) {
-        return vehicleService.getVehicles(page, size, type, brand, null, search, sortBy, true);
+        return vehicleService.getVehicles(page, size, type, brand, null, search, sortBy, true,
+                minPrice, maxPrice, availableFrom, availableTo);
     }
 
     /**
@@ -60,7 +67,7 @@ public class VehicleController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false, name = "sort_by") String sortBy
     ) {
-        return vehicleService.getVehicles(page, size, type, brand, status, search, sortBy, false);
+        return vehicleService.getVehicles(page, size, type, brand, status, search, sortBy, false, null, null, null, null);
     }
 
     @PostMapping(value = "/api/v1/admin/vehicles", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)

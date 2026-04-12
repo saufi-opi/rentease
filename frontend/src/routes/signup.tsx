@@ -4,10 +4,10 @@ import {
   Link as RouterLink,
   redirect,
 } from "@tanstack/react-router"
+import { motion } from "framer-motion"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { motion } from "framer-motion"
-
+import { Logo } from "@/components/common/Logo"
 import {
   Form,
   FormControl,
@@ -20,7 +20,6 @@ import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
-import { Logo } from "@/components/common/Logo"
 
 const formSchema = z
   .object({
@@ -86,29 +85,35 @@ function SignUp() {
     <div className="flex min-h-screen">
       {/* Left side - Illustration */}
       <div className="hidden w-1/2 items-center justify-center bg-linear-to-br from-primary/10 to-accent/20 lg:flex">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8 }}
           className="relative p-12"
         >
-          <img 
-            src="/assets/images/marketing/auth_bg.png" 
-            alt="Sign up illustration" 
+          <img
+            src="/assets/images/marketing/auth_bg.png"
+            alt="Sign up illustration"
             className="max-w-md rounded-2xl shadow-2xl opacity-90"
           />
           <div className="absolute inset-0 flex items-center justify-center">
-            <motion.div 
+            <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4, duration: 0.6 }}
               className="rounded-xl bg-background/80 p-8 shadow-xl backdrop-blur-sm"
             >
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-xl">RE</div>
+                <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-xl">
+                  RE
+                </div>
                 <div className="flex flex-col">
-                  <span className="font-bold text-foreground">Join RentEase</span>
-                  <span className="text-xs text-muted-foreground">Start your journey today</span>
+                  <span className="font-bold text-foreground">
+                    Join RentEase
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Start your journey today
+                  </span>
                 </div>
               </div>
             </motion.div>
@@ -118,14 +123,17 @@ function SignUp() {
 
       {/* Right side - Form */}
       <div className="flex w-full items-center justify-center px-8 lg:w-1/2">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
           className="w-full max-w-md"
         >
           {/* Logo */}
-          <RouterLink to="/" className="mb-6 flex items-center justify-center transition-transform hover:scale-105">
+          <RouterLink
+            to="/"
+            className="mb-6 flex items-center justify-center transition-transform hover:scale-105"
+          >
             <Logo iconSize="h-6" fontSize="text-xl" />
           </RouterLink>
 
@@ -134,10 +142,7 @@ function SignUp() {
           </h1>
 
           <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-4"
-            >
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="full_name"
@@ -156,7 +161,7 @@ function SignUp() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="phone_number"
@@ -234,8 +239,8 @@ function SignUp() {
                 )}
               />
 
-              <LoadingButton 
-                type="submit" 
+              <LoadingButton
+                type="submit"
                 className="h-11 w-full bg-primary text-base font-semibold text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:shadow-lg active:scale-[0.98]"
                 loading={signUpMutation.isPending}
               >
@@ -246,7 +251,10 @@ function SignUp() {
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{" "}
-            <RouterLink to="/login" className="font-semibold text-primary hover:underline underline-offset-4">
+            <RouterLink
+              to="/login"
+              className="font-semibold text-primary hover:underline underline-offset-4"
+            >
               Sign In
             </RouterLink>
           </p>

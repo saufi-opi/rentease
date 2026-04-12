@@ -6,9 +6,68 @@ export type AuthToken = {
     expiresIn?: number;
 };
 
+export type BookingRequest = {
+    vehicleId: string;
+    startDate: string;
+    endDate: string;
+};
+
+export type BookingResponse = {
+    id?: string;
+    vehicleId?: string;
+    vehicleBrand?: string;
+    vehicleModel?: string;
+    vehicleType?: string;
+    vehicleImageUrl?: string;
+    vehicleRentalRate?: number;
+    customerId?: string;
+    customerName?: string;
+    customerEmail?: string;
+    startDate?: string;
+    endDate?: string;
+    rentalDays?: number;
+    totalCost?: number;
+    status?: string;
+    confirmationRef?: string;
+    createdAt?: string;
+};
+
+export type BookingStatusUpdateRequest = {
+    status: string;
+};
+
 export type LoginRequest = {
     email: string;
     password: string;
+};
+
+export type PageableObject = {
+    offset?: number;
+    sort?: SortObject;
+    pageNumber?: number;
+    pageSize?: number;
+    paged?: boolean;
+    unpaged?: boolean;
+};
+
+export type PageBookingResponse = {
+    totalElements?: number;
+    totalPages?: number;
+    first?: boolean;
+    last?: boolean;
+    size?: number;
+    content?: Array<BookingResponse>;
+    number?: number;
+    sort?: SortObject;
+    numberOfElements?: number;
+    pageable?: PageableObject;
+    empty?: boolean;
+};
+
+export type SortObject = {
+    empty?: boolean;
+    sorted?: boolean;
+    unsorted?: boolean;
 };
 
 export type UpdateProfileRequest = {
@@ -86,6 +145,41 @@ export type LoginData = {
 
 export type LoginResponse = (AuthToken);
 
+export type UpdateBookingStatusData = {
+    id: string;
+    requestBody: BookingStatusUpdateRequest;
+};
+
+export type UpdateBookingStatusResponse = (BookingResponse);
+
+export type GetMyBookingsResponse = (Array<BookingResponse>);
+
+export type CreateBookingData = {
+    requestBody: BookingRequest;
+};
+
+export type CreateBookingResponse = (BookingResponse);
+
+export type GetBookingByIdData = {
+    id: string;
+};
+
+export type GetBookingByIdResponse = (BookingResponse);
+
+export type CancelBookingData = {
+    id: string;
+};
+
+export type CancelBookingResponse = (void);
+
+export type GetAllBookingsData = {
+    page?: number;
+    size?: number;
+    status?: string;
+};
+
+export type GetAllBookingsResponse = (PageBookingResponse);
+
 export type UploadImageData = {
     requestBody?: {
         file: (Blob | File);
@@ -144,7 +238,11 @@ export type CreateVehicleData = {
 export type CreateVehicleResponse = (VehicleResponse);
 
 export type BrowseVehiclesData = {
+    availableFrom?: string;
+    availableTo?: string;
     brand?: string;
+    maxPrice?: number;
+    minPrice?: number;
     page?: number;
     search?: string;
     size?: number;

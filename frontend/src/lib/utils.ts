@@ -1,18 +1,18 @@
 import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
 import { formatDistanceToNow, parseISO } from "date-fns"
+import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
 /**
- * Parse a date string as UTC. 
+ * Parse a date string as UTC.
  * Backend stores timestamps in UTC but may not include the 'Z' suffix.
  * This function ensures the timestamp is treated as UTC.
  */
 export function parseUTCDate(dateString: string): Date {
-  return parseISO(dateString.endsWith('Z') ? dateString : dateString + 'Z')
+  return parseISO(dateString.endsWith("Z") ? dateString : `${dateString}Z`)
 }
 
 /**

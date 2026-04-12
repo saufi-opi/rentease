@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { AppHeader } from "@/components/Layout/AppHeader"
-import { HeroSection } from "@/components/landing/HeroSection"
-import { PopularCarsSection } from "@/components/landing/PopularCarsSection"
-import { TrendingOffersSection } from "@/components/landing/TrendingOffersSection"
-import { HowWeWorkSection } from "@/components/landing/HowWeWorkSection"
-import { WhyChooseUsSection } from "@/components/landing/WhyChooseUsSection"
-import { TestimonialsSection } from "@/components/landing/TestimonialsSection"
 import { FAQSection } from "@/components/landing/FAQSection"
+import { HeroSection } from "@/components/landing/HeroSection"
+import { HowWeWorkSection } from "@/components/landing/HowWeWorkSection"
 import { LandingFooter } from "@/components/landing/LandingFooter"
+import { PopularCarsSection } from "@/components/landing/PopularCarsSection"
+import { TestimonialsSection } from "@/components/landing/TestimonialsSection"
+import { TrendingOffersSection } from "@/components/landing/TrendingOffersSection"
+import { WhyChooseUsSection } from "@/components/landing/WhyChooseUsSection"
 
 export const Route = createFileRoute("/")({
   component: LandingPage,

@@ -32,8 +32,16 @@ public class FileStorageService {
         try {
             if (originalFileName.contains(".")) {
                 fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
+            } else if (file.getContentType() != null) {
+                fileExtension = switch (file.getContentType()) {
+                    case "image/jpeg" -> ".jpg";
+                    case "image/png" -> ".png";
+                    case "image/webp" -> ".webp";
+                    case "image/gif" -> ".gif";
+                    default -> "";
+                };
             }
-            
+
             String newFileName = UUID.randomUUID().toString() + fileExtension;
             Path targetLocation = this.fileStorageLocation.resolve(newFileName);
             

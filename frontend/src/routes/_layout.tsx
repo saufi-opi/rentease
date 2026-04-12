@@ -1,8 +1,4 @@
-import {
-  createFileRoute,
-  Outlet,
-  redirect,
-} from "@tanstack/react-router"
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 import { AppHeader } from "@/components/Layout/AppHeader"
 import { ProfileSidebar } from "@/components/Layout/ProfileSidebar"
 import { isLoggedIn } from "@/hooks/useAuth"

@@ -1,11 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router"
 import { motion } from "framer-motion"
-import { 
-  User as UserIcon, 
-  Heart, 
-  Car,  
-  LogOut 
-} from "lucide-react"
+import { Car, Heart, LogOut, User as UserIcon } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import useAuth from "@/hooks/useAuth"
@@ -26,7 +21,7 @@ export function ProfileSidebar() {
   }
 
   return (
-    <motion.aside 
+    <motion.aside
       initial={{ opacity: 0, x: -30 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
@@ -35,31 +30,39 @@ export function ProfileSidebar() {
       {/* Profile Info */}
       <div className="flex flex-col items-center px-6 pb-6 border-b border-border/10">
         <Avatar className="h-24 w-24 border-4 shadow-md relative mb-4">
-          <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${user?.full_name || 'User'}`} />
+          <AvatarImage
+            src={`https://api.dicebear.com/7.x/initials/svg?seed=${user?.full_name || "User"}`}
+          />
           <AvatarFallback className="text-xl bg-primary/10 text-primary font-bold">
             {getInitials(user?.full_name || "User")}
           </AvatarFallback>
         </Avatar>
-        <h3 className="text-xl font-bold text-foreground">{user?.full_name || "User Name"}</h3>
-        <p className="text-sm text-muted-foreground">{user?.email || "user@example.com"}</p>
+        <h3 className="text-xl font-bold text-foreground">
+          {user?.full_name || "User Name"}
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          {user?.email || "user@example.com"}
+        </p>
       </div>
 
       {/* Navigation */}
       <nav className="flex flex-col w-full text-sm font-semibold text-muted-foreground">
         {navLinks.map((link) => {
           const isActive = location.pathname.startsWith(link.path)
-          
+
           return (
             <Link
               key={link.path}
               to={link.path}
               className={`flex items-center w-full px-8 py-4 space-x-4 transition-all hover:bg-muted/50 ${
-                isActive 
-                  ? "bg-[#eaf4fc] text-primary border-r-4 border-primary font-bold" 
+                isActive
+                  ? "bg-[#eaf4fc] text-primary border-r-4 border-primary font-bold"
                   : "border-r-4 border-transparent"
               }`}
             >
-              <link.icon className={`h-5 w-5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+              <link.icon
+                className={`h-5 w-5 ${isActive ? "text-primary" : "text-muted-foreground"}`}
+              />
               <span>{link.name}</span>
             </Link>
           )

@@ -113,6 +113,78 @@ export const VehicleResponseSchema = {
     }
 } as const;
 
+export const BookingStatusUpdateRequestSchema = {
+    type: 'object',
+    properties: {
+        status: {
+            type: 'string'
+        }
+    },
+    required: ['status']
+} as const;
+
+export const BookingResponseSchema = {
+    type: 'object',
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid'
+        },
+        vehicleId: {
+            type: 'string'
+        },
+        vehicleBrand: {
+            type: 'string'
+        },
+        vehicleModel: {
+            type: 'string'
+        },
+        vehicleType: {
+            type: 'string'
+        },
+        vehicleImageUrl: {
+            type: 'string'
+        },
+        vehicleRentalRate: {
+            type: 'number'
+        },
+        customerId: {
+            type: 'string'
+        },
+        customerName: {
+            type: 'string'
+        },
+        customerEmail: {
+            type: 'string'
+        },
+        startDate: {
+            type: 'string',
+            format: 'date'
+        },
+        endDate: {
+            type: 'string',
+            format: 'date'
+        },
+        rentalDays: {
+            type: 'integer',
+            format: 'int32'
+        },
+        totalCost: {
+            type: 'number'
+        },
+        status: {
+            type: 'string'
+        },
+        confirmationRef: {
+            type: 'string'
+        },
+        createdAt: {
+            type: 'string',
+            format: 'date-time'
+        }
+    }
+} as const;
+
 export const UserRegistrationRequestSchema = {
     type: 'object',
     properties: {
@@ -159,6 +231,25 @@ export const UserResponseSchema = {
             type: 'string'
         }
     }
+} as const;
+
+export const BookingRequestSchema = {
+    type: 'object',
+    properties: {
+        vehicleId: {
+            type: 'string',
+            format: 'uuid'
+        },
+        startDate: {
+            type: 'string',
+            format: 'date'
+        },
+        endDate: {
+            type: 'string',
+            format: 'date'
+        }
+    },
+    required: ['endDate', 'startDate', 'vehicleId']
 } as const;
 
 export const LoginRequestSchema = {
@@ -231,6 +322,95 @@ export const VehiclePageSchema = {
             format: 'int32'
         },
         last: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const PageBookingResponseSchema = {
+    type: 'object',
+    properties: {
+        totalElements: {
+            type: 'integer',
+            format: 'int64'
+        },
+        totalPages: {
+            type: 'integer',
+            format: 'int32'
+        },
+        first: {
+            type: 'boolean'
+        },
+        last: {
+            type: 'boolean'
+        },
+        size: {
+            type: 'integer',
+            format: 'int32'
+        },
+        content: {
+            type: 'array',
+            items: {
+                '$ref': '#/components/schemas/BookingResponse'
+            }
+        },
+        number: {
+            type: 'integer',
+            format: 'int32'
+        },
+        sort: {
+            '$ref': '#/components/schemas/SortObject'
+        },
+        numberOfElements: {
+            type: 'integer',
+            format: 'int32'
+        },
+        pageable: {
+            '$ref': '#/components/schemas/PageableObject'
+        },
+        empty: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const PageableObjectSchema = {
+    type: 'object',
+    properties: {
+        offset: {
+            type: 'integer',
+            format: 'int64'
+        },
+        sort: {
+            '$ref': '#/components/schemas/SortObject'
+        },
+        pageNumber: {
+            type: 'integer',
+            format: 'int32'
+        },
+        pageSize: {
+            type: 'integer',
+            format: 'int32'
+        },
+        paged: {
+            type: 'boolean'
+        },
+        unpaged: {
+            type: 'boolean'
+        }
+    }
+} as const;
+
+export const SortObjectSchema = {
+    type: 'object',
+    properties: {
+        empty: {
+            type: 'boolean'
+        },
+        sorted: {
+            type: 'boolean'
+        },
+        unsorted: {
             type: 'boolean'
         }
     }

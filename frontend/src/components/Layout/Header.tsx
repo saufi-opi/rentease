@@ -1,7 +1,7 @@
-import { HelpCircle, Bell, Search } from "lucide-react"
+import { Bell, HelpCircle, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Input } from "@/components/ui/input"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export default function Header() {
   return (
@@ -9,12 +9,12 @@ export default function Header() {
       <div className="flex items-center gap-4 flex-1">
         <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground transition-all duration-200" />
         <div className="hidden md:flex h-4 w-px bg-border mx-2" />
-        
+
         {/* Global Search Placeholder */}
         <div className="hidden md:flex relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input 
-            placeholder="Search for cars, bookings..." 
+          <Input
+            placeholder="Search for cars, bookings..."
             className="pl-9 h-9 border-none bg-muted/50 focus-visible:ring-1 focus-visible:ring-primary/20"
           />
         </div>

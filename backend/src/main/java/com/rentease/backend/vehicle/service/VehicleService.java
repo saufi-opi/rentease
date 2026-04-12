@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.UUID;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,7 +40,9 @@ public class VehicleService {
      */
     @SuppressWarnings("removal")
     public VehiclePage getVehicles(int page, int size, String type, String brand,
-                                   String status, String search, String sortBy, boolean customerOnly) {
+                                   String status, String search, String sortBy, boolean customerOnly,
+                                   BigDecimal minPrice, BigDecimal maxPrice,
+                                   LocalDate availableFrom, LocalDate availableTo) {
         Sort sort = resolveSort(sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
@@ -59,6 +62,8 @@ public class VehicleService {
         spec = spec.and(VehicleSpecification.hasType(type));
         spec = spec.and(VehicleSpecification.hasBrand(brand));
         spec = spec.and(VehicleSpecification.searchByKeyword(search));
+        spec = spec.and(VehicleSpecification.hasPriceRange(minPrice, maxPrice));
+        spec = spec.and(VehicleSpecification.isAvailableForDates(availableFrom, availableTo));
 
         Page<Vehicle> vehiclePage = vehicleRepository.findAll(spec, pageable);
 
@@ -153,7 +158,7 @@ public class VehicleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found with id: " + id));
         
         String imageUrl = vehicle.getImageUrl();
-        if (imageUrl != null && !imageUrl.startsWith("seeds/")) {
+        if (imageUrl != null) {
             fileStorageService.deleteFile(imageUrl);
         }
         

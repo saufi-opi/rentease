@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { LoginData, LoginResponse, UploadImageData, UploadImageResponse, RegisterData, RegisterResponse, GetCurrentUserResponse, DeleteProfileResponse, UpdateProfileData, UpdateProfileResponse, UpdateVehicleData, UpdateVehicleResponse, DeleteVehicleData, DeleteVehicleResponse, ListVehiclesData, ListVehiclesResponse, CreateVehicleData, CreateVehicleResponse, BrowseVehiclesData, BrowseVehiclesResponse, GetVehicleData, GetVehicleResponse, GetVehicleSuggestionsResponse } from './types.gen';
+import type { LoginData, LoginResponse, UpdateBookingStatusData, UpdateBookingStatusResponse, GetMyBookingsResponse, CreateBookingData, CreateBookingResponse, GetBookingByIdData, GetBookingByIdResponse, CancelBookingData, CancelBookingResponse, GetAllBookingsData, GetAllBookingsResponse, UploadImageData, UploadImageResponse, RegisterData, RegisterResponse, GetCurrentUserResponse, DeleteProfileResponse, UpdateProfileData, UpdateProfileResponse, UpdateVehicleData, UpdateVehicleResponse, DeleteVehicleData, DeleteVehicleResponse, ListVehiclesData, ListVehiclesResponse, CreateVehicleData, CreateVehicleResponse, BrowseVehiclesData, BrowseVehiclesResponse, GetVehicleData, GetVehicleResponse, GetVehicleSuggestionsResponse } from './types.gen';
 
 export class AuthControllerService {
     /**
@@ -18,6 +18,105 @@ export class AuthControllerService {
             url: '/api/v1/auth/login',
             body: data.requestBody,
             mediaType: 'application/json'
+        });
+    }
+}
+
+export class BookingControllerService {
+    /**
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns BookingResponse OK
+     * @throws ApiError
+     */
+    public static updateBookingStatus(data: UpdateBookingStatusData): CancelablePromise<UpdateBookingStatusResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/admin/bookings/{id}/status',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json'
+        });
+    }
+    
+    /**
+     * @returns BookingResponse OK
+     * @throws ApiError
+     */
+    public static getMyBookings(): CancelablePromise<GetMyBookingsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/bookings'
+        });
+    }
+    
+    /**
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns BookingResponse Created
+     * @throws ApiError
+     */
+    public static createBooking(data: CreateBookingData): CancelablePromise<CreateBookingResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/bookings',
+            body: data.requestBody,
+            mediaType: 'application/json'
+        });
+    }
+    
+    /**
+     * @param data The data for the request.
+     * @param data.id
+     * @returns BookingResponse OK
+     * @throws ApiError
+     */
+    public static getBookingById(data: GetBookingByIdData): CancelablePromise<GetBookingByIdResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/bookings/{id}',
+            path: {
+                id: data.id
+            }
+        });
+    }
+    
+    /**
+     * @param data The data for the request.
+     * @param data.id
+     * @returns void No Content
+     * @throws ApiError
+     */
+    public static cancelBooking(data: CancelBookingData): CancelablePromise<CancelBookingResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/bookings/{id}',
+            path: {
+                id: data.id
+            }
+        });
+    }
+    
+    /**
+     * @param data The data for the request.
+     * @param data.page
+     * @param data.size
+     * @param data.status
+     * @returns PageBookingResponse OK
+     * @throws ApiError
+     */
+    public static getAllBookings(data: GetAllBookingsData = {}): CancelablePromise<GetAllBookingsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/admin/bookings',
+            query: {
+                page: data.page,
+                size: data.size,
+                status: data.status
+            }
         });
     }
 }
@@ -180,6 +279,10 @@ export class VehicleControllerService {
      * @param data.brand
      * @param data.search
      * @param data.sortBy
+     * @param data.minPrice
+     * @param data.maxPrice
+     * @param data.availableFrom
+     * @param data.availableTo
      * @returns VehiclePage OK
      * @throws ApiError
      */
@@ -193,7 +296,11 @@ export class VehicleControllerService {
                 type: data.type,
                 brand: data.brand,
                 search: data.search,
-                sort_by: data.sortBy
+                sort_by: data.sortBy,
+                min_price: data.minPrice,
+                max_price: data.maxPrice,
+                available_from: data.availableFrom,
+                available_to: data.availableTo
             }
         });
     }

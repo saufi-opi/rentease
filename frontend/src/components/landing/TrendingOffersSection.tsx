@@ -1,6 +1,6 @@
-import { motion, Variants } from "framer-motion"
-import { Card, CardContent } from "@/components/ui/card"
+import { motion, type Variants } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
 
 const offers = [
   {
@@ -52,18 +52,22 @@ export function TrendingOffersSection() {
   return (
     <section className="bg-muted py-16">
       <div className="container mx-auto px-4">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.6 }}
           className="mb-10 text-center"
         >
-          <h2 className="mb-2 text-3xl font-bold text-foreground">TOP TRENDING OFFER</h2>
-          <p className="text-muted-foreground">Grab the best deals before they expire</p>
+          <h2 className="mb-2 text-3xl font-bold text-foreground">
+            TOP TRENDING OFFER
+          </h2>
+          <p className="text-muted-foreground">
+            Grab the best deals before they expire
+          </p>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
@@ -74,9 +78,9 @@ export function TrendingOffersSection() {
             <motion.div key={offer.id} variants={cardVariants}>
               <Card className="group cursor-pointer overflow-hidden border-0 shadow-lg transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
                 <div className="relative aspect-16/10 overflow-hidden">
-                  <img 
-                    src={offer.image} 
-                    alt={offer.title} 
+                  <img
+                    src={offer.image}
+                    alt={offer.title}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent transition-opacity duration-300 group-hover:opacity-80" />
@@ -92,8 +96,12 @@ export function TrendingOffersSection() {
                   </motion.div>
                 </div>
                 <CardContent className="p-4">
-                  <h3 className="mb-1 font-bold text-foreground transition-colors duration-300 group-hover:text-primary">{offer.title}</h3>
-                  <p className="text-sm text-muted-foreground">{offer.description}</p>
+                  <h3 className="mb-1 font-bold text-foreground transition-colors duration-300 group-hover:text-primary">
+                    {offer.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {offer.description}
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>
