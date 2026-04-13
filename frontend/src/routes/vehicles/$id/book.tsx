@@ -19,7 +19,7 @@ import { BookingControllerService, VehicleControllerService } from "@/client"
 import { AppHeader } from "@/components/Layout/AppHeader"
 import { LandingFooter } from "@/components/landing/LandingFooter"
 import { Button } from "@/components/ui/button"
-import { DateRangePicker } from "@/components/ui/date-range-picker"
+import { DatePicker } from "@/components/ui/date-picker"
 import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 
@@ -54,15 +54,17 @@ function BookingFormPage() {
   const startDateObj = startDate ? parseISO(startDate) : undefined
   const endDateObj = endDate ? parseISO(endDate) : undefined
 
-  const handleDateSelect = ({
-    from,
-    to,
-  }: {
-    from: Date | undefined
-    to: Date | undefined
-  }) => {
-    setStartDate(from ? format(from, "yyyy-MM-dd") : "")
-    setEndDate(to ? format(to, "yyyy-MM-dd") : "")
+  const handleStartDateSelect = (date: Date | undefined) => {
+    setStartDate(date ? format(date, "yyyy-MM-dd") : "")
+    // Clear end date if it's no longer after the new start date
+    if (date && endDateObj && endDateObj <= date) {
+      setEndDate("")
+    }
+    setError("")
+  }
+
+  const handleEndDateSelect = (date: Date | undefined) => {
+    setEndDate(date ? format(date, "yyyy-MM-dd") : "")
     setError("")
   }
 
@@ -319,18 +321,32 @@ function BookingFormPage() {
 
                   <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Date Selection */}
-                    <div>
-                      <p className="block text-sm font-semibold mb-1.5">
-                        Pickup &amp; Return Dates
-                      </p>
-                      <DateRangePicker
-                        from={startDateObj}
-                        to={endDateObj}
-                        onSelect={handleDateSelect}
-                        placeholder="Select pickup & return dates"
-                        numberOfMonths={2}
-                        align="start"
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="block text-sm font-semibold mb-1.5">
+                          Pickup Date
+                        </p>
+                        <DatePicker
+                          value={startDateObj}
+                          onChange={handleStartDateSelect}
+                          placeholder="Pickup date"
+                          align="start"
+                        />
+                      </div>
+                      <div>
+                        <p className="block text-sm font-semibold mb-1.5">
+                          Return Date
+                        </p>
+                        <DatePicker
+                          value={endDateObj}
+                          onChange={handleEndDateSelect}
+                          placeholder="Return date"
+                          align="start"
+                          disabled={(date) =>
+                            startDateObj ? date <= startDateObj : false
+                          }
+                        />
+                      </div>
                     </div>
 
                     {/* Cost Breakdown */}

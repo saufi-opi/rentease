@@ -62,7 +62,7 @@ Located at `backend/src/main/java/com/rentease/backend/`:
 
 - `auth/` — JWT authentication: `AuthController` (login), `JwtTokenProvider`, `JwtAuthenticationFilter`, `SecurityConfig`
 - `user/` — User management: CRUD, role-based access (`ADMIN`, `TOP_MANAGEMENT`, regular users)
-- `vehicle/` — Vehicle CRUD with pagination/filtering via `VehicleSpecification` (JPA Criteria). Supports filtering by type, brand, keyword, price range, and date-range availability (subquery excludes vehicles with overlapping non-cancelled bookings). Key enums: `AvailabilityStatus` (`AVAILABLE`, `RENTED`, `MAINTENANCE`), `TransmissionType`, `VehicleFeature`.
+- `vehicle/` — Vehicle CRUD with pagination/filtering via `VehicleSpecification` (JPA Criteria). Supports filtering by type, brand, keyword, price range, and date-range availability (subquery excludes vehicles with overlapping non-cancelled bookings). Key enums: `AvailabilityStatus` (`AVAILABLE`, `RENTED`, `MAINTENANCE`), `TransmissionType`, `VehicleFeature`. The `discount` field is a percentage (DECIMAL 5,2); booking cost = `rental_rate * (1 - discount/100) * days` (calculated client-side).
 - `booking/` — Booking lifecycle: customers create bookings (`PENDING`), admins approve/reject via status update. Bookings include a `confirmationRef` UUID. Customers can cancel their own bookings; admins see all with pagination and status filter.
 - `common/` — Cross-cutting: `GlobalExceptionHandler`, `FileStorageService` (local `uploads/` dir), `DataInitializer` (seeds default admin on startup), `WebMvcConfig` (CORS, static file serving)
 
@@ -89,9 +89,18 @@ Located at `frontend/src/`:
   - `vehicles/` — public vehicle listing (`index.tsx`), detail (`$id/index.tsx`), and booking form (`$id/book.tsx`). The booking form accepts `?pickup=` and `?return=` search params, calculates cost client-side using `rental_rate` and `discount`, and requires authentication.
   - `admin/_layout.tsx` — admin layout (sidebar + header). Guards: authenticated + role `ADMIN` or `TOP_MANAGEMENT`.
   - `admin/_layout/` — admin pages: `dashboard.tsx`, `vehicles.tsx`, `bookings.tsx`
-- `components/` — UI components using shadcn/ui (Radix UI primitives + Tailwind)
-- `hooks/` — custom hooks including `useAuth`
-- `lib/` — utilities including `react-query` client setup
+- `components/` — UI components using shadcn/ui (Radix UI primitives + Tailwind). Notable custom pickers: `date-picker.tsx` (single date, closes on select) and `date-range-picker.tsx` (range, kept for potential reuse). Both disable past dates and accept an optional `disabled` callback for additional constraints.
+- `hooks/` — custom hooks:
+  - `useAuth` — current user auth state
+  - `useDataTableHandlers` — pagination/sorting/search synced to URL query params; sort format is `field:asc|desc` (mapped to `±field` for API). Used by all admin data tables.
+  - `useDebounce` — 500ms default, used in search inputs
+  - `useCustomToast` — wrapper around sonner with `.success()` / `.error()` helpers
+- `lib/` — utilities:
+  - `react-query.ts` — exports `queryClient` used for prefetching in route `beforeLoad` guards
+  - `axios.ts` — configures `OpenAPI.TOKEN` as an async function reading from localStorage (not a static value)
+  - `schemas.ts` — `paginationSearchSchema` (Zod) validates `page`, `size`, `q`, `sort`, `filter` URL params with defaults; used by all paginated routes
+  - `utils.ts` — includes `parseUTCDate` (handles UTC timestamps missing 'Z' suffix), `formatRelativeTime`, `slugify`
+  - `cropImage.ts` — client-side image crop/rotate/flip for profile photo upload, returns a Blob
 
 **State management**: TanStack Query for server state. The `queryClient` is exported from `lib/react-query` and used for prefetching in route `beforeLoad` guards.
 
@@ -109,4 +118,16 @@ Located at `frontend/src/`:
 
 ### File Uploads
 
-Files are stored in `uploads/` at the project root. Backend serves them statically at `/uploads/**`. `FileStorageService` handles saving/deleting files.
+Files are stored in `uploads/` at the project root. Backend serves them statically at `/uploads/**`. `FileStorageService` handles saving/deleting files. The upload directory is configurable via `app.upload-dir` in `application.properties` (default: `../uploads` relative to JAR).
+
+### Environment Variables
+
+**Frontend** — create `frontend/.env`:
+```
+VITE_API_URL=http://localhost:8081
+```
+
+**Backend** dev defaults (in `application.properties`):
+- MySQL: `localhost:3306/rent_ease`, credentials `root`/`root`
+- JWT expiration: `259200000` ms (3 days)
+- Upload dir: `../uploads` (relative to JAR, override with `app.upload-dir`)

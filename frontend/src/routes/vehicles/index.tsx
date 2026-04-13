@@ -20,7 +20,7 @@ import { AppHeader } from "@/components/Layout/AppHeader"
 import { LandingFooter } from "@/components/landing/LandingFooter"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { DateRangePicker } from "@/components/ui/date-range-picker"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -135,19 +135,21 @@ function VehiclesPage() {
     setCurrentPage(1)
   }
 
-  // Convert string dates ↔ Date objects for the picker
+  // Convert string dates ↔ Date objects for the pickers
   const pickupDateObj = pickupDate ? parseISO(pickupDate) : undefined
   const returnDateObj = returnDate ? parseISO(returnDate) : undefined
 
-  const handleDateSelect = ({
-    from,
-    to,
-  }: {
-    from: Date | undefined
-    to: Date | undefined
-  }) => {
-    setPickupDate(from ? format(from, "yyyy-MM-dd") : "")
-    setReturnDate(to ? format(to, "yyyy-MM-dd") : "")
+  const handlePickupSelect = (date: Date | undefined) => {
+    setPickupDate(date ? format(date, "yyyy-MM-dd") : "")
+    // Clear return date if it's before the new pickup date
+    if (date && returnDateObj && returnDateObj <= date) {
+      setReturnDate("")
+    }
+    setCurrentPage(1)
+  }
+
+  const handleReturnSelect = (date: Date | undefined) => {
+    setReturnDate(date ? format(date, "yyyy-MM-dd") : "")
     setCurrentPage(1)
   }
 
@@ -213,14 +215,29 @@ function VehiclesPage() {
                     </button>
                   )}
                 </div>
-                <DateRangePicker
-                  from={pickupDateObj}
-                  to={returnDateObj}
-                  onSelect={handleDateSelect}
-                  placeholder="Select dates"
-                  numberOfMonths={1}
-                  align="start"
-                />
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Pickup</p>
+                    <DatePicker
+                      value={pickupDateObj}
+                      onChange={handlePickupSelect}
+                      placeholder="Pickup date"
+                      align="start"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Return</p>
+                    <DatePicker
+                      value={returnDateObj}
+                      onChange={handleReturnSelect}
+                      placeholder="Return date"
+                      align="start"
+                      disabled={(date) =>
+                        pickupDateObj ? date <= pickupDateObj : false
+                      }
+                    />
+                  </div>
+                </div>
                 {activeDateLabel && (
                   <p className="text-xs text-primary mt-2 font-medium">
                     {activeDateLabel} · Available only
