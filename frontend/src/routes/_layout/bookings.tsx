@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { motion } from "framer-motion"
-import { AlertCircle, Calendar, Car, Copy, Loader2 } from "lucide-react"
+import { AlertCircle, Calendar, Car, Copy, CreditCard, Landmark, Loader2 } from "lucide-react"
 import { useState } from "react"
 import { BookingControllerService, type BookingResponse } from "@/client"
 import { Badge } from "@/components/ui/badge"
@@ -21,6 +21,13 @@ export const Route = createFileRoute("/_layout/bookings")({
     meta: [{ title: "My Bookings - RentEase" }],
   }),
 })
+
+const PAYMENT_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
+  PAID: { label: "Paid", className: "bg-green-500/10 text-green-600 border-green-200" },
+  PENDING: { label: "Unpaid", className: "bg-amber-500/10 text-amber-600 border-amber-200" },
+  FAILED: { label: "Failed", className: "bg-red-500/10 text-red-600 border-red-200" },
+  REFUNDED: { label: "Refunded", className: "bg-purple-500/10 text-purple-600 border-purple-200" },
+}
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   PENDING: {
@@ -146,12 +153,27 @@ function BookingsPage() {
                       <h3 className="font-bold truncate">
                         {booking.vehicleBrand} {booking.vehicleModel}
                       </h3>
-                      <Badge
-                        variant="outline"
-                        className={`shrink-0 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 ${statusBadgeClass(booking.status!)}`}
-                      >
-                        {statusLabel(booking.status!)}
-                      </Badge>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 ${statusBadgeClass(booking.status!)}`}
+                        >
+                          {statusLabel(booking.status!)}
+                        </Badge>
+                        {(booking as any).paymentStatus && (
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 flex items-center gap-1 ${PAYMENT_STATUS_CONFIG[(booking as any).paymentStatus]?.className ?? "bg-muted text-muted-foreground"}`}
+                          >
+                            {(booking as any).paymentStatus === "FPX" ? (
+                              <Landmark className="h-2.5 w-2.5" />
+                            ) : (
+                              <CreditCard className="h-2.5 w-2.5" />
+                            )}
+                            {PAYMENT_STATUS_CONFIG[(booking as any).paymentStatus]?.label ?? (booking as any).paymentStatus}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
 
                     <p className="text-xs text-muted-foreground mb-1 font-mono">

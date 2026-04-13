@@ -1,4 +1,4 @@
-import { Car, ClipboardList, LayoutDashboard } from "lucide-react"
+import { Car, ClipboardList, LayoutDashboard, Receipt } from "lucide-react"
 
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar"
 import useAuth from "@/hooks/useAuth"
@@ -16,6 +16,7 @@ export function AdminSidebar() {
     },
     { icon: Car, title: "Vehicles", path: "/admin/vehicles" },
     { icon: ClipboardList, title: "All Bookings", path: "/admin/bookings" },
+    { icon: Receipt, title: "Transactions", path: "/admin/transactions" },
   ]
 
   return (

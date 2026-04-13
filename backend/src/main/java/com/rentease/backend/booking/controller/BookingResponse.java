@@ -25,6 +25,7 @@ public class BookingResponse {
     private int rentalDays;
     private BigDecimal totalCost;
     private String status;
+    private String paymentStatus;
     private String confirmationRef;
     private LocalDateTime createdAt;
 }

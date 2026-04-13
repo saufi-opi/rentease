@@ -8,6 +8,7 @@ import com.rentease.backend.booking.model.BookingStatus;
 import com.rentease.backend.booking.repository.BookingRepository;
 import com.rentease.backend.common.exception.ConflictException;
 import com.rentease.backend.common.exception.ResourceNotFoundException;
+import com.rentease.backend.payment.repository.PaymentRepository;
 import com.rentease.backend.user.model.User;
 import com.rentease.backend.user.repository.UserRepository;
 import com.rentease.backend.vehicle.model.AvailabilityStatus;
@@ -34,6 +35,7 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
     private final UserRepository userRepository;
+    private final PaymentRepository paymentRepository;
 
     @Transactional
     public BookingResponse createBooking(BookingRequest request) {
@@ -183,6 +185,10 @@ public class BookingService {
             }
         }
 
+        String paymentStatus = paymentRepository.findByBookingId(booking.getId())
+                .map(p -> p.getStatus().name())
+                .orElse(null);
+
         return BookingResponse.builder()
                 .id(booking.getId())
                 .vehicleId(vehicle.getId().toString())
@@ -199,6 +205,7 @@ public class BookingService {
                 .rentalDays((int) days)
                 .totalCost(booking.getTotalCost())
                 .status(booking.getStatus().name())
+                .paymentStatus(paymentStatus)
                 .confirmationRef(booking.getConfirmationRef())
                 .createdAt(booking.getCreatedAt())
                 .build();

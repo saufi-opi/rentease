@@ -1,49 +1,70 @@
+import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import {
   Car,
   ClipboardList,
   LayoutDashboard,
+  Loader2,
   TrendingUp,
   Users,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { getAccessToken } from "@/lib/axios"
+
+const API_BASE = import.meta.env.VITE_API_URL ?? ""
+
+async function fetchRevenue(): Promise<{ monthlyRevenue: number; totalRevenue: number }> {
+  const res = await fetch(`${API_BASE}/api/v1/admin/payments/revenue`, {
+    headers: { Authorization: `Bearer ${getAccessToken()}` },
+  })
+  if (!res.ok) throw new Error("Failed to fetch revenue")
+  return res.json()
+}
 
 export const Route = createFileRoute("/admin/_layout/dashboard")({
   component: AdminDashboard,
   head: () => ({
-    meta: [
-      {
-        title: "Admin Dashboard - RentEase",
-      },
-    ],
+    meta: [{ title: "Admin Dashboard - RentEase" }],
   }),
 })
 
 function AdminDashboard() {
+  const { data: revenue, isLoading: revenueLoading } = useQuery({
+    queryKey: ["admin-revenue"],
+    queryFn: fetchRevenue,
+  })
+
+  const monthlyRevenueDisplay = revenueLoading
+    ? "…"
+    : revenue
+      ? `RM ${Number(revenue.monthlyRevenue).toLocaleString("en-MY", { minimumFractionDigits: 2 })}`
+      : "RM 0.00"
+
   const stats = [
     {
       title: "Total Users",
-      value: "1,248",
+      value: "—",
       icon: Users,
       color: "text-blue-600",
     },
     {
       title: "Active Fleet",
-      value: "84",
+      value: "—",
       icon: Car,
       color: "text-emerald-600",
     },
     {
       title: "Today's Bookings",
-      value: "12",
+      value: "—",
       icon: ClipboardList,
       color: "text-amber-600",
     },
     {
       title: "Monthly Revenue",
-      value: "RM 425,000",
+      value: monthlyRevenueDisplay,
       icon: TrendingUp,
       color: "text-primary",
+      isRevenue: true,
     },
   ]
 
@@ -66,15 +87,24 @@ function AdminDashboard() {
               <CardTitle className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
                 {stat.title}
               </CardTitle>
-              <stat.icon className={`h-5 w-5 ${stat.color}`} />
+              {stat.isRevenue && revenueLoading ? (
+                <Loader2 className={`h-5 w-5 animate-spin ${stat.color}`} />
+              ) : (
+                <stat.icon className={`h-5 w-5 ${stat.color}`} />
+              )}
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-black text-foreground">
                 {stat.value}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                +12% from last month
-              </p>
+              {stat.isRevenue && revenue && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Total: RM{" "}
+                  {Number(revenue.totalRevenue).toLocaleString("en-MY", {
+                    minimumFractionDigits: 2,
+                  })}
+                </p>
+              )}
             </CardContent>
           </Card>
         ))}

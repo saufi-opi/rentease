@@ -25,6 +25,7 @@ import { Route as LayoutBookingsRouteImport } from './routes/_layout/bookings'
 import { Route as VehiclesIdIndexRouteImport } from './routes/vehicles/$id/index'
 import { Route as VehiclesIdBookRouteImport } from './routes/vehicles/$id/book'
 import { Route as AdminLayoutVehiclesRouteImport } from './routes/admin/_layout/vehicles'
+import { Route as AdminLayoutTransactionsRouteImport } from './routes/admin/_layout/transactions'
 import { Route as AdminLayoutDashboardRouteImport } from './routes/admin/_layout/dashboard'
 import { Route as AdminLayoutBookingsRouteImport } from './routes/admin/_layout/bookings'
 
@@ -103,6 +104,11 @@ const AdminLayoutVehiclesRoute = AdminLayoutVehiclesRouteImport.update({
   path: '/vehicles',
   getParentRoute: () => AdminLayoutRoute,
 } as any)
+const AdminLayoutTransactionsRoute = AdminLayoutTransactionsRouteImport.update({
+  id: '/transactions',
+  path: '/transactions',
+  getParentRoute: () => AdminLayoutRoute,
+} as any)
 const AdminLayoutDashboardRoute = AdminLayoutDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/vehicles': typeof VehiclesIndexRoute
   '/admin/bookings': typeof AdminLayoutBookingsRoute
   '/admin/dashboard': typeof AdminLayoutDashboardRoute
+  '/admin/transactions': typeof AdminLayoutTransactionsRoute
   '/admin/vehicles': typeof AdminLayoutVehiclesRoute
   '/vehicles/$id/book': typeof VehiclesIdBookRoute
   '/vehicles/$id/': typeof VehiclesIdIndexRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/vehicles': typeof VehiclesIndexRoute
   '/admin/bookings': typeof AdminLayoutBookingsRoute
   '/admin/dashboard': typeof AdminLayoutDashboardRoute
+  '/admin/transactions': typeof AdminLayoutTransactionsRoute
   '/admin/vehicles': typeof AdminLayoutVehiclesRoute
   '/vehicles/$id/book': typeof VehiclesIdBookRoute
   '/vehicles/$id': typeof VehiclesIdIndexRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/vehicles/': typeof VehiclesIndexRoute
   '/admin/_layout/bookings': typeof AdminLayoutBookingsRoute
   '/admin/_layout/dashboard': typeof AdminLayoutDashboardRoute
+  '/admin/_layout/transactions': typeof AdminLayoutTransactionsRoute
   '/admin/_layout/vehicles': typeof AdminLayoutVehiclesRoute
   '/vehicles/$id/book': typeof VehiclesIdBookRoute
   '/vehicles/$id/': typeof VehiclesIdIndexRoute
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/vehicles'
     | '/admin/bookings'
     | '/admin/dashboard'
+    | '/admin/transactions'
     | '/admin/vehicles'
     | '/vehicles/$id/book'
     | '/vehicles/$id/'
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/vehicles'
     | '/admin/bookings'
     | '/admin/dashboard'
+    | '/admin/transactions'
     | '/admin/vehicles'
     | '/vehicles/$id/book'
     | '/vehicles/$id'
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/vehicles/'
     | '/admin/_layout/bookings'
     | '/admin/_layout/dashboard'
+    | '/admin/_layout/transactions'
     | '/admin/_layout/vehicles'
     | '/vehicles/$id/book'
     | '/vehicles/$id/'
@@ -337,6 +349,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLayoutVehiclesRouteImport
       parentRoute: typeof AdminLayoutRoute
     }
+    '/admin/_layout/transactions': {
+      id: '/admin/_layout/transactions'
+      path: '/transactions'
+      fullPath: '/admin/transactions'
+      preLoaderRoute: typeof AdminLayoutTransactionsRouteImport
+      parentRoute: typeof AdminLayoutRoute
+    }
     '/admin/_layout/dashboard': {
       id: '/admin/_layout/dashboard'
       path: '/dashboard'
@@ -372,12 +391,14 @@ const LayoutRouteWithChildren =
 interface AdminLayoutRouteChildren {
   AdminLayoutBookingsRoute: typeof AdminLayoutBookingsRoute
   AdminLayoutDashboardRoute: typeof AdminLayoutDashboardRoute
+  AdminLayoutTransactionsRoute: typeof AdminLayoutTransactionsRoute
   AdminLayoutVehiclesRoute: typeof AdminLayoutVehiclesRoute
 }
 
 const AdminLayoutRouteChildren: AdminLayoutRouteChildren = {
   AdminLayoutBookingsRoute: AdminLayoutBookingsRoute,
   AdminLayoutDashboardRoute: AdminLayoutDashboardRoute,
+  AdminLayoutTransactionsRoute: AdminLayoutTransactionsRoute,
   AdminLayoutVehiclesRoute: AdminLayoutVehiclesRoute,
 }
 

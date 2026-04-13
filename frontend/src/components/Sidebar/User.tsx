@@ -83,7 +83,7 @@ export function User({ user }: { user: any }) {
               <UserInfo fullName={user?.full_name} email={user?.email} />
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <RouterLink to="/settings" onClick={handleMenuClick}>
+            <RouterLink to="/profile" onClick={handleMenuClick}>
               <DropdownMenuItem>
                 <Settings />
                 User Settings

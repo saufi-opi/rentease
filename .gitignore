@@ -6,6 +6,7 @@ node_modules/
 /playwright/.cache/
 
 .env
+backend/.env
 
 # Python
 __pycache__/

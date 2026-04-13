@@ -261,7 +261,7 @@ function VehicleDetailsPage() {
                     className="rounded-full px-8 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
                     asChild
                   >
-                    <Link to="/vehicles/$id/book" params={{ id: id }}>
+                    <Link to="/vehicles/$id/book" params={{ id: id }} search={{ pickup: "", return: "" }}>
                       Rent Now
                     </Link>
                   </Button>
@@ -370,7 +370,7 @@ function VehicleDetailsPage() {
               {recommendations.map((v) => (
                 <Link
                   key={v.id}
-                  to="/vehicles/$id/"
+                  to="/vehicles/$id"
                   params={{ id: v.id! }}
                   className="bg-card rounded-2xl overflow-hidden border border-border shadow-sm hover:shadow-xl transition-all group"
                 >

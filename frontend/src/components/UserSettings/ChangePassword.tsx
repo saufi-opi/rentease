@@ -3,7 +3,15 @@ import { useMutation } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { type UpdatePassword, UsersService } from "@/client"
+import { getAccessToken } from "@/lib/axios"
+
+const API_BASE = import.meta.env.VITE_API_URL ?? ""
+
+type UpdatePassword = {
+  current_password: string
+  new_password: string
+  confirm_password: string
+}
 import {
   Form,
   FormControl,
@@ -52,8 +60,23 @@ const ChangePassword = () => {
   })
 
   const mutation = useMutation({
-    mutationFn: (data: UpdatePassword) =>
-      UsersService.updatePasswordMe({ requestBody: data }),
+    mutationFn: async (data: UpdatePassword) => {
+      const res = await fetch(`${API_BASE}/api/v1/users/me/password`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        body: JSON.stringify({
+          currentPassword: data.current_password,
+          newPassword: data.new_password,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.message ?? "Failed to update password")
+      }
+    },
     onSuccess: () => {
       showSuccessToast("Password updated successfully")
       form.reset()

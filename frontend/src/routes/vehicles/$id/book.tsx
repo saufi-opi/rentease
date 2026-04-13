@@ -1,15 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, Link, redirect } from "@tanstack/react-router"
+import { Elements } from "@stripe/react-stripe-js"
+import { loadStripe } from "@stripe/stripe-js"
 import { differenceInCalendarDays, format, parseISO } from "date-fns"
 import { AnimatePresence, motion } from "framer-motion"
 import {
   AlertCircle,
   ArrowLeft,
-  ArrowRight,
   Car,
-  CheckCircle2,
   ChevronRight,
-  Copy,
   Fuel,
   Loader2,
   Users,
@@ -18,10 +17,31 @@ import { useMemo, useState } from "react"
 import { BookingControllerService, VehicleControllerService } from "@/client"
 import { AppHeader } from "@/components/Layout/AppHeader"
 import { LandingFooter } from "@/components/landing/LandingFooter"
+import { DigitalReceipt } from "@/components/payment/DigitalReceipt"
+import { PaymentForm } from "@/components/payment/PaymentForm"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
+import { getAccessToken } from "@/lib/axios"
+
+const API_BASE = import.meta.env.VITE_API_URL ?? ""
+
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.message ?? `Request failed: ${res.status}`)
+  }
+  return res.json()
+}
 
 export const Route = createFileRoute("/vehicles/$id/book")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -36,30 +56,47 @@ export const Route = createFileRoute("/vehicles/$id/book")({
   component: BookingFormPage,
 })
 
+type Step = "dates" | "payment" | "receipt"
+
+interface PaymentIntentData {
+  clientSecret: string
+  publishableKey: string
+  paymentId: string
+  amount: number
+}
+
+interface PaymentResult {
+  confirmationRef: string
+  paymentType?: string
+  paymentDate?: string
+  gatewayTransactionId?: string
+}
+
 function BookingFormPage() {
   const { id } = Route.useParams()
   const search = Route.useSearch()
   const queryClient = useQueryClient()
   const { showErrorToast } = useCustomToast()
 
+  const [step, setStep] = useState<Step>("dates")
   const [startDate, setStartDate] = useState(search.pickup || "")
   const [endDate, setEndDate] = useState(search.return || "")
-  const [confirmed, setConfirmed] = useState<{
-    ref: string
-    total: number
-  } | null>(null)
-  const [copied, setCopied] = useState(false)
   const [error, setError] = useState("")
+  const [paymentIntentData, setPaymentIntentData] = useState<PaymentIntentData | null>(null)
+  const [paymentResult, setPaymentResult] = useState<PaymentResult | null>(null)
+  const [isInitiating, setIsInitiating] = useState(false)
+
+  const stripePromise = useMemo(
+    () => (paymentIntentData?.publishableKey ? loadStripe(paymentIntentData.publishableKey) : null),
+    [paymentIntentData?.publishableKey],
+  )
 
   const startDateObj = startDate ? parseISO(startDate) : undefined
   const endDateObj = endDate ? parseISO(endDate) : undefined
 
   const handleStartDateSelect = (date: Date | undefined) => {
     setStartDate(date ? format(date, "yyyy-MM-dd") : "")
-    // Clear end date if it's no longer after the new start date
-    if (date && endDateObj && endDateObj <= date) {
-      setEndDate("")
-    }
+    if (date && endDateObj && endDateObj <= date) setEndDate("")
     setError("")
   }
 
@@ -91,32 +128,36 @@ function BookingFormPage() {
     [rentalDays, dailyRate],
   )
 
-  const { mutate: createBooking, isPending } = useMutation({
+  const { mutate: createBooking, isPending: isCreatingBooking } = useMutation({
     mutationFn: () =>
       BookingControllerService.createBooking({
-        requestBody: {
-          vehicleId: id,
-          startDate: startDate,
-          endDate: endDate,
-        },
+        requestBody: { vehicleId: id, startDate, endDate },
       }),
-    onSuccess: (data) => {
-      setConfirmed({
-        ref: data.confirmationRef!,
-        total: Number(data.totalCost),
-      })
-      queryClient.invalidateQueries({ queryKey: ["my-bookings"] })
-      queryClient.invalidateQueries({ queryKey: ["vehicles"] })
+    onSuccess: async (booking) => {
+      const bid = booking.id!
+      setIsInitiating(true)
+      try {
+        const intent = await apiPost<PaymentIntentData>(
+          "/api/v1/payments/create-intent",
+          { bookingId: bid },
+        )
+        setPaymentIntentData(intent)
+        setStep("payment")
+      } catch (err: any) {
+        setError(err.message || "Failed to initialise payment. Please try again.")
+        showErrorToast(err.message || "Payment initialisation failed.")
+      } finally {
+        setIsInitiating(false)
+      }
     },
     onError: (err: any) => {
-      const msg =
-        err?.body?.message || err?.message || "Failed to create booking"
+      const msg = err?.body?.message || err?.message || "Failed to create booking"
       setError(msg)
       showErrorToast(msg)
     },
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleProceedToPayment = (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     if (!startDate || !endDate) {
@@ -130,13 +171,29 @@ function BookingFormPage() {
     createBooking()
   }
 
-  const copyRef = () => {
-    if (confirmed?.ref) {
-      navigator.clipboard.writeText(confirmed.ref)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+  const handlePaymentSuccess = async (paymentIntentId: string) => {
+    try {
+      const result = await apiPost<PaymentResult>("/api/v1/payments/confirm", {
+        paymentIntentId,
+      })
+      setPaymentResult(result)
+      queryClient.invalidateQueries({ queryKey: ["my-bookings"] })
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] })
+      setStep("receipt")
+    } catch (err: any) {
+      showErrorToast(err.message || "Payment confirmed but failed to save. Contact support.")
     }
   }
+
+  const handlePaymentFailure = async (paymentIntentId: string, reason: string) => {
+    try {
+      await apiPost("/api/v1/payments/failed", { paymentIntentId, reason })
+    } catch {
+      // best-effort
+    }
+    setError(reason || "Payment failed. Please try again.")
+  }
+
 
   if (isLoading) {
     return (
@@ -178,7 +235,7 @@ function BookingFormPage() {
           </Link>
           <ChevronRight className="h-3 w-3" />
           <Link
-            to="/vehicles/$id/"
+            to="/vehicles/$id"
             params={{ id }}
             className="hover:text-primary transition-colors"
           >
@@ -189,89 +246,41 @@ function BookingFormPage() {
         </div>
 
         <AnimatePresence mode="wait">
-          {confirmed ? (
-            /* ── Confirmation Screen ── */
+          {step === "receipt" && vehicle && paymentResult ? (
             <motion.div
-              key="confirmed"
+              key="receipt"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center justify-center py-16 text-center"
             >
-              <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-6">
-                <CheckCircle2 className="h-10 w-10 text-green-600 dark:text-green-400" />
-              </div>
-              <h1 className="text-3xl font-bold mb-2">Booking Submitted!</h1>
-              <p className="text-muted-foreground max-w-md mb-8">
-                Your booking request for{" "}
-                <strong>
-                  {vehicle.brand} {vehicle.model}
-                </strong>{" "}
-                has been received and is pending admin approval.
-              </p>
-
-              <div className="bg-card border border-border rounded-2xl p-8 w-full max-w-sm mb-8">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-2">
-                  Confirmation Reference
-                </p>
-                <div className="flex items-center justify-center gap-3">
-                  <span className="text-2xl font-mono font-black text-primary tracking-wider">
-                    {confirmed.ref}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={copyRef}
-                    className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-                  >
-                    <Copy className="h-4 w-4 text-muted-foreground" />
-                  </button>
-                </div>
-                {copied && (
-                  <p className="text-xs text-green-600 mt-1">Copied!</p>
-                )}
-                <div className="mt-4 pt-4 border-t border-border text-sm text-muted-foreground">
-                  <div className="flex justify-between mb-1">
-                    <span>
-                      {startDate} → {endDate}
-                    </span>
-                    <span>
-                      {rentalDays} day{rentalDays !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  <div className="flex justify-between font-bold text-foreground">
-                    <span>Total</span>
-                    <span>RM {confirmed.total.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <Button variant="outline" asChild>
-                  <Link to="/vehicles">Browse More</Link>
-                </Button>
-                <Button asChild>
-                  <Link to="/bookings">
-                    View My Bookings <ArrowRight className="h-4 w-4 ml-2" />
-                  </Link>
-                </Button>
-              </div>
+              <DigitalReceipt
+                receipt={{
+                  confirmationRef: paymentResult.confirmationRef,
+                  vehicleBrand: vehicle.brand!,
+                  vehicleModel: vehicle.model!,
+                  vehicleImageUrl: vehicle.image_url ?? undefined,
+                  startDate,
+                  endDate,
+                  rentalDays,
+                  totalCost: Number(totalCost),
+                  paymentType: paymentResult.paymentType,
+                  paymentDate: paymentResult.paymentDate,
+                  gatewayTransactionId: paymentResult.gatewayTransactionId,
+                }}
+              />
             </motion.div>
           ) : (
-            /* ── Booking Form ── */
             <motion.div
               key="form"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               className="grid grid-cols-1 lg:grid-cols-5 gap-8"
             >
-              {/* Vehicle Summary */}
+              {/* Vehicle Summary Sidebar */}
               <div className="lg:col-span-2">
                 <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden sticky top-20">
                   <div className="aspect-video overflow-hidden">
                     <img
-                      src={
-                        vehicle.image_url ||
-                        "/assets/images/vehicles/placeholder.png"
-                      }
+                      src={vehicle.image_url || "/assets/images/vehicles/placeholder.png"}
                       alt={`${vehicle.brand} ${vehicle.model}`}
                       className="w-full h-full object-cover"
                     />
@@ -299,127 +308,143 @@ function BookingFormPage() {
                       <span className="text-2xl font-black text-primary font-mono">
                         RM {dailyRate.toFixed(2)}
                       </span>
-                      <span className="text-muted-foreground text-sm">
-                        / day
-                      </span>
+                      <span className="text-muted-foreground text-sm">/ day</span>
                     </div>
                     {Boolean(vehicle.discount && vehicle.discount > 0) && (
                       <p className="text-xs text-muted-foreground line-through">
                         RM {vehicle.rental_rate} / day (before discount)
                       </p>
                     )}
+                    {rentalDays > 0 && (
+                      <div className="mt-4 pt-4 border-t border-border space-y-1.5 text-sm">
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>RM {dailyRate.toFixed(2)} × {rentalDays} day{rentalDays !== 1 ? "s" : ""}</span>
+                        </div>
+                        <div className="flex justify-between font-bold text-base">
+                          <span>Total</span>
+                          <span className="text-primary font-mono">RM {totalCost}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Form */}
+              {/* Main Form Area */}
               <div className="lg:col-span-3">
                 <div className="bg-card rounded-2xl border border-border shadow-sm p-6 sm:p-8">
-                  <h1 className="text-2xl font-bold mb-6">
-                    Complete Your Booking
-                  </h1>
-
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Date Selection */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <p className="block text-sm font-semibold mb-1.5">
-                          Pickup Date
-                        </p>
-                        <DatePicker
-                          value={startDateObj}
-                          onChange={handleStartDateSelect}
-                          placeholder="Pickup date"
-                          align="start"
-                        />
-                      </div>
-                      <div>
-                        <p className="block text-sm font-semibold mb-1.5">
-                          Return Date
-                        </p>
-                        <DatePicker
-                          value={endDateObj}
-                          onChange={handleEndDateSelect}
-                          placeholder="Return date"
-                          align="start"
-                          disabled={(date) =>
-                            startDateObj ? date <= startDateObj : false
-                          }
-                        />
-                      </div>
+                  {/* Step indicator */}
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className={`flex items-center gap-2 text-sm font-bold ${step === "dates" ? "text-primary" : "text-muted-foreground"}`}>
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === "dates" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>1</span>
+                      Dates
                     </div>
+                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                    <div className={`flex items-center gap-2 text-sm font-bold ${step === "payment" ? "text-primary" : "text-muted-foreground"}`}>
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === "payment" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>2</span>
+                      Payment
+                    </div>
+                  </div>
 
-                    {/* Cost Breakdown */}
-                    {rentalDays > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="rounded-xl bg-primary/5 border border-primary/15 p-5 space-y-3"
-                      >
-                        <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">
-                          Cost Summary
-                        </h3>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            Daily rate
-                          </span>
-                          <span>RM {dailyRate.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            Duration
-                          </span>
-                          <span>
-                            {rentalDays} day{rentalDays !== 1 ? "s" : ""}
-                          </span>
-                        </div>
-                        <div className="flex justify-between font-bold text-base pt-2 border-t border-primary/15">
-                          <span>Total</span>
-                          <span className="text-primary font-mono text-lg">
-                            RM {totalCost}
-                          </span>
-                        </div>
-                      </motion.div>
-                    )}
+                  {step === "dates" && (
+                    <form onSubmit={handleProceedToPayment} className="space-y-6">
+                      <h1 className="text-2xl font-bold">Select Your Dates</h1>
 
-                    {/* Error */}
-                    {error && (
-                      <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3">
-                        <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                        {error}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="block text-sm font-semibold mb-1.5">Pickup Date</p>
+                          <DatePicker
+                            value={startDateObj}
+                            onChange={handleStartDateSelect}
+                            placeholder="Pickup date"
+                            align="start"
+                          />
+                        </div>
+                        <div>
+                          <p className="block text-sm font-semibold mb-1.5">Return Date</p>
+                          <DatePicker
+                            value={endDateObj}
+                            onChange={handleEndDateSelect}
+                            placeholder="Return date"
+                            align="start"
+                            disabled={(date) =>
+                              startDateObj ? date <= startDateObj : false
+                            }
+                          />
+                        </div>
                       </div>
-                    )}
 
-                    <div className="flex gap-3 pt-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="flex-1 h-12"
-                        asChild
+                      {error && (
+                        <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3">
+                          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                          {error}
+                        </div>
+                      )}
+
+                      <div className="flex gap-3 pt-2">
+                        <Button type="button" variant="outline" className="flex-1 h-12" asChild>
+                          <Link to="/vehicles/$id" params={{ id }}>
+                            <ArrowLeft className="h-4 w-4 mr-2" /> Back
+                          </Link>
+                        </Button>
+                        <Button
+                          type="submit"
+                          className="flex-1 h-12 font-bold shadow-lg shadow-primary/20"
+                          disabled={isCreatingBooking || isInitiating || rentalDays < 1}
+                        >
+                          {isCreatingBooking || isInitiating ? (
+                            <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Preparing…</>
+                          ) : (
+                            <>Proceed to Payment · RM {rentalDays > 0 ? totalCost : "—"}</>
+                          )}
+                        </Button>
+                      </div>
+                    </form>
+                  )}
+
+                  {step === "payment" && paymentIntentData && (
+                    <div className="space-y-6">
+                      <div>
+                        <h1 className="text-2xl font-bold">Complete Payment</h1>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Choose card or online banking (FPX) to pay RM {totalCost}.
+                        </p>
+                      </div>
+
+                      <Elements
+                        stripe={stripePromise}
+                        options={{
+                          clientSecret: paymentIntentData.clientSecret,
+                          appearance: { theme: "stripe" },
+                        }}
                       >
-                        <Link to="/vehicles/$id/" params={{ id }}>
-                          <ArrowLeft className="h-4 w-4 mr-2" /> Back
-                        </Link>
-                      </Button>
+                        <PaymentForm
+                          amount={Number(totalCost)}
+                          onSuccess={handlePaymentSuccess}
+                          onFailure={handlePaymentFailure}
+                        />
+                      </Elements>
+
+                      {error && (
+                        <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3">
+                          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                          {error}
+                        </div>
+                      )}
+
                       <Button
-                        type="submit"
-                        className="flex-1 h-12 font-bold shadow-lg shadow-primary/20"
-                        disabled={isPending || rentalDays < 1}
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground"
+                        onClick={() => {
+                          setStep("dates")
+                          setError("")
+                        }}
                       >
-                        {isPending ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />{" "}
-                            Processing…
-                          </>
-                        ) : (
-                          <>
-                            Confirm Booking · RM{" "}
-                            {rentalDays > 0 ? totalCost : "—"}
-                          </>
-                        )}
+                        <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Change dates
                       </Button>
                     </div>
-                  </form>
+                  )}
                 </div>
               </div>
             </motion.div>

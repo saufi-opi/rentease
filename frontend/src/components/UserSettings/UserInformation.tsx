@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { UsersService, type UserUpdateMe } from "@/client"
+import { UserControllerService, type UpdateProfileRequest } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -48,8 +48,8 @@ const UserInformation = () => {
   }
 
   const mutation = useMutation({
-    mutationFn: (data: UserUpdateMe) =>
-      UsersService.updateUserMe({ requestBody: data }),
+    mutationFn: (data: UpdateProfileRequest) =>
+      UserControllerService.updateProfile({ requestBody: data }),
     onSuccess: () => {
       showSuccessToast("User updated successfully")
       toggleEditMode()
@@ -61,14 +61,11 @@ const UserInformation = () => {
   })
 
   const onSubmit = (data: FormData) => {
-    const updateData: UserUpdateMe = {}
+    const updateData: UpdateProfileRequest = {}
 
     // only include fields that have changed
     if (data.full_name !== currentUser?.full_name) {
       updateData.full_name = data.full_name
-    }
-    if (data.email !== currentUser?.email) {
-      updateData.email = data.email
     }
 
     mutation.mutate(updateData)
@@ -118,22 +115,12 @@ const UserInformation = () => {
           <FormField
             control={form.control}
             name="email"
-            render={({ field }) =>
-              editMode ? (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              ) : (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <p className="py-2 truncate max-w-sm">{field.value}</p>
-                </FormItem>
-              )
-            }
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <p className="py-2 truncate max-w-sm text-muted-foreground">{field.value}</p>
+              </FormItem>
+            )}
           />
 
           <div className="flex gap-3">
