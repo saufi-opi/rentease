@@ -76,6 +76,10 @@ function VehiclesPage() {
     setCurrentPage(1)
   }, [])
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }, [currentPage])
+
   const priceFilterActive =
     debouncedPriceRange[0] > PRICE_MIN || debouncedPriceRange[1] < PRICE_MAX
   const dateFilterActive = !!(pickupDate && returnDate)
