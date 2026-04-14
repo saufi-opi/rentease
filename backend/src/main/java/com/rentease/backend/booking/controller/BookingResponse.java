@@ -1,7 +1,10 @@
 package com.rentease.backend.booking.controller;
 
+import com.rentease.backend.booking.model.BookingStatus;
+import com.rentease.backend.payment.model.PaymentStatus;
 import lombok.Builder;
 import lombok.Getter;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,8 +27,8 @@ public class BookingResponse {
     private LocalDate endDate;
     private int rentalDays;
     private BigDecimal totalCost;
-    private String status;
-    private String paymentStatus;
+    private BookingStatus status;
+    private PaymentStatus paymentStatus;
     private String confirmationRef;
     private LocalDateTime createdAt;
 }

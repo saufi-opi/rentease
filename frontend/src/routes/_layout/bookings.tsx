@@ -1,9 +1,21 @@
+import { Elements } from "@stripe/react-stripe-js"
+import { loadStripe } from "@stripe/stripe-js"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { motion } from "framer-motion"
-import { AlertCircle, Calendar, Car, Copy, CreditCard, Landmark, Loader2 } from "lucide-react"
-import { useState } from "react"
+import {
+  AlertCircle,
+  Calendar,
+  Car,
+  CheckCircle,
+  Copy,
+  CreditCard,
+  Landmark,
+  Loader2,
+} from "lucide-react"
+import { useMemo, useState } from "react"
 import { BookingControllerService, type BookingResponse } from "@/client"
+import { PaymentForm } from "@/components/payment/PaymentForm"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,6 +26,32 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import useCustomToast from "@/hooks/useCustomToast"
+import { getAccessToken } from "@/lib/axios"
+
+const API_BASE = import.meta.env.VITE_API_URL ?? ""
+
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as any).message ?? `Request failed: ${res.status}`)
+  }
+  return res.json()
+}
+
+interface PaymentIntentData {
+  clientSecret: string
+  publishableKey: string
+  paymentId: string
+  amount: number
+}
 
 export const Route = createFileRoute("/_layout/bookings")({
   component: BookingsPage,
@@ -27,6 +65,7 @@ const PAYMENT_STATUS_CONFIG: Record<string, { label: string; className: string }
   PENDING: { label: "Unpaid", className: "bg-amber-500/10 text-amber-600 border-amber-200" },
   FAILED: { label: "Failed", className: "bg-red-500/10 text-red-600 border-red-200" },
   REFUNDED: { label: "Refunded", className: "bg-purple-500/10 text-purple-600 border-purple-200" },
+  PARTIALLY_REFUNDED: { label: "Part. Refunded", className: "bg-violet-500/10 text-violet-600 border-violet-200" },
 }
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
@@ -50,6 +89,10 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
     label: "Cancelled",
     className: "bg-rose-500/10 text-rose-600 border-rose-200",
   },
+  PAYMENT_FAILED: {
+    label: "Payment Failed",
+    className: "bg-red-500/10 text-red-700 border-red-300",
+  },
 }
 
 function statusBadgeClass(status: string) {
@@ -66,10 +109,20 @@ function statusLabel(status: string) {
 function BookingsPage() {
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const queryClient = useQueryClient()
-  const [selectedBooking, setSelectedBooking] =
-    useState<BookingResponse | null>(null)
+  const [selectedBooking, setSelectedBooking] = useState<BookingResponse | null>(null)
   const [cancelTarget, setCancelTarget] = useState<BookingResponse | null>(null)
   const [copied, setCopied] = useState(false)
+
+  // Retry payment state
+  const [retryTarget, setRetryTarget] = useState<BookingResponse | null>(null)
+  const [retryStep, setRetryStep] = useState<"loading" | "payment" | "done">("loading")
+  const [retryIntentData, setRetryIntentData] = useState<PaymentIntentData | null>(null)
+  const [retryError, setRetryError] = useState("")
+
+  const stripePromise = useMemo(
+    () => (retryIntentData?.publishableKey ? loadStripe(retryIntentData.publishableKey) : null),
+    [retryIntentData?.publishableKey],
+  )
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ["my-bookings"],
@@ -98,7 +151,51 @@ function BookingsPage() {
   }
 
   const canCancel = (status: string) =>
-    status === "PENDING" || status === "CONFIRMED"
+    status === "PENDING" || status === "CONFIRMED" || status === "PAYMENT_FAILED"
+
+  const openRetryDialog = async (booking: BookingResponse) => {
+    setRetryTarget(booking)
+    setRetryStep("loading")
+    setRetryIntentData(null)
+    setRetryError("")
+    try {
+      const intent = await apiPost<PaymentIntentData>("/api/v1/payments/create-intent", {
+        bookingId: booking.id,
+      })
+      setRetryIntentData(intent)
+      setRetryStep("payment")
+    } catch (err: any) {
+      setRetryError(err.message || "Failed to initialise payment.")
+    }
+  }
+
+  const closeRetryDialog = () => {
+    setRetryTarget(null)
+    setRetryIntentData(null)
+    setRetryError("")
+    setRetryStep("loading")
+  }
+
+  const handleRetrySuccess = async (paymentIntentId: string) => {
+    try {
+      await apiPost("/api/v1/payments/confirm", { paymentIntentId })
+      setRetryStep("done")
+      queryClient.invalidateQueries({ queryKey: ["my-bookings"] })
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] })
+      setTimeout(closeRetryDialog, 2000)
+    } catch (err: any) {
+      showErrorToast(err.message || "Payment confirmed but failed to save. Contact support.")
+    }
+  }
+
+  const handleRetryFailure = async (paymentIntentId: string, reason: string) => {
+    try {
+      await apiPost("/api/v1/payments/failed", { paymentIntentId, reason })
+    } catch {
+      // best-effort
+    }
+    queryClient.invalidateQueries({ queryKey: ["my-bookings"] })
+  }
 
   if (isLoading) {
     return (
@@ -160,17 +257,17 @@ function BookingsPage() {
                         >
                           {statusLabel(booking.status!)}
                         </Badge>
-                        {(booking as any).paymentStatus && (
+                        {booking.paymentStatus && (
                           <Badge
                             variant="outline"
-                            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 flex items-center gap-1 ${PAYMENT_STATUS_CONFIG[(booking as any).paymentStatus]?.className ?? "bg-muted text-muted-foreground"}`}
+                            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 flex items-center gap-1 ${PAYMENT_STATUS_CONFIG[booking.paymentStatus]?.className ?? "bg-muted text-muted-foreground"}`}
                           >
-                            {(booking as any).paymentStatus === "FPX" ? (
+                            {booking.paymentStatus === "FPX" ? (
                               <Landmark className="h-2.5 w-2.5" />
                             ) : (
                               <CreditCard className="h-2.5 w-2.5" />
                             )}
-                            {PAYMENT_STATUS_CONFIG[(booking as any).paymentStatus]?.label ?? (booking as any).paymentStatus}
+                            {PAYMENT_STATUS_CONFIG[booking.paymentStatus]?.label ?? booking.paymentStatus}
                           </Badge>
                         )}
                       </div>
@@ -198,7 +295,16 @@ function BookingsPage() {
                       >
                         View Details
                       </Button>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        {booking.status === "PAYMENT_FAILED" && (
+                          <Button
+                            size="sm"
+                            className="h-7 px-3 text-xs font-bold bg-primary"
+                            onClick={() => openRetryDialog(booking)}
+                          >
+                            Pay Now
+                          </Button>
+                        )}
                         {canCancel(booking.status!) && (
                           <Button
                             variant="ghost"
@@ -223,10 +329,7 @@ function BookingsPage() {
       </Card>
 
       {/* Detail Dialog */}
-      <Dialog
-        open={!!selectedBooking}
-        onOpenChange={() => setSelectedBooking(null)}
-      >
+      <Dialog open={!!selectedBooking} onOpenChange={() => setSelectedBooking(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Booking Details</DialogTitle>
@@ -258,9 +361,7 @@ function BookingsPage() {
 
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="text-xs text-muted-foreground font-semibold">
-                    Ref
-                  </p>
+                  <p className="text-xs text-muted-foreground font-semibold">Ref</p>
                   <div className="flex items-center gap-1.5 font-mono font-bold">
                     {selectedBooking.confirmationRef}
                     <button
@@ -273,53 +374,56 @@ function BookingsPage() {
                   {copied && <p className="text-xs text-green-600">Copied!</p>}
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground font-semibold">
-                    Total
-                  </p>
+                  <p className="text-xs text-muted-foreground font-semibold">Total</p>
                   <p className="font-bold text-primary">
                     RM {Number(selectedBooking.totalCost).toFixed(2)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground font-semibold">
-                    Pickup
-                  </p>
+                  <p className="text-xs text-muted-foreground font-semibold">Pickup</p>
                   <p className="font-semibold">{selectedBooking.startDate}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground font-semibold">
-                    Return
-                  </p>
+                  <p className="text-xs text-muted-foreground font-semibold">Return</p>
                   <p className="font-semibold">{selectedBooking.endDate}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground font-semibold">
-                    Duration
-                  </p>
+                  <p className="text-xs text-muted-foreground font-semibold">Duration</p>
                   <p className="font-semibold">
                     {selectedBooking.rentalDays} day
                     {selectedBooking.rentalDays !== 1 ? "s" : ""}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground font-semibold">
-                    Booked On
-                  </p>
+                  <p className="text-xs text-muted-foreground font-semibold">Booked On</p>
                   <p className="font-semibold">
                     {selectedBooking.createdAt?.split("T")[0]}
                   </p>
                 </div>
               </div>
 
-              {canCancel(selectedBooking.status!) && (
-                <Button
-                  variant="destructive"
-                  className="w-full"
-                  onClick={() => setCancelTarget(selectedBooking)}
-                >
-                  Cancel Booking
-                </Button>
-              )}
+              <div className="flex flex-col gap-2">
+                {selectedBooking.status === "PAYMENT_FAILED" && (
+                  <Button
+                    className="w-full"
+                    onClick={() => {
+                      setSelectedBooking(null)
+                      openRetryDialog(selectedBooking)
+                    }}
+                  >
+                    Retry Payment
+                  </Button>
+                )}
+                {canCancel(selectedBooking.status!) && (
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={() => setCancelTarget(selectedBooking)}
+                  >
+                    Cancel Booking
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
@@ -337,8 +441,10 @@ function BookingsPage() {
             </div>
             <p className="text-sm text-muted-foreground text-center">
               Are you sure you want to cancel booking{" "}
-              <strong>{cancelTarget?.confirmationRef}</strong>? This action
-              cannot be undone.
+              <strong>{cancelTarget?.confirmationRef}</strong>?{" "}
+              {cancelTarget?.paymentStatus === "PAID"
+                ? "A full refund will be issued automatically."
+                : "This action cannot be undone."}
             </p>
             <div className="flex gap-3 w-full">
               <Button
@@ -352,9 +458,7 @@ function BookingsPage() {
                 variant="destructive"
                 className="flex-1"
                 disabled={cancelling}
-                onClick={() =>
-                  cancelTarget?.id && cancelBooking(cancelTarget.id)
-                }
+                onClick={() => cancelTarget?.id && cancelBooking(cancelTarget.id)}
               >
                 {cancelling ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -364,6 +468,72 @@ function BookingsPage() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Retry Payment Dialog */}
+      <Dialog open={!!retryTarget} onOpenChange={closeRetryDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Complete Payment</DialogTitle>
+          </DialogHeader>
+
+          {retryStep === "done" ? (
+            <div className="flex flex-col items-center gap-4 py-6">
+              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+              <div className="text-center">
+                <p className="font-bold text-lg">Payment Successful!</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Your booking is now confirmed.
+                </p>
+              </div>
+            </div>
+          ) : retryStep === "loading" ? (
+            <div className="flex flex-col items-center gap-4 py-8">
+              {retryError ? (
+                <>
+                  <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3 w-full">
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                    {retryError}
+                  </div>
+                  <Button variant="outline" onClick={closeRetryDialog}>Close</Button>
+                </>
+              ) : (
+                <>
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">Preparing payment…</p>
+                </>
+              )}
+            </div>
+          ) : (
+            retryIntentData && stripePromise && (
+              <div className="space-y-4 pt-2">
+                <div className="bg-muted/40 rounded-lg px-4 py-3 flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground font-medium">
+                    {retryTarget?.vehicleBrand} {retryTarget?.vehicleModel}
+                  </span>
+                  <span className="font-black text-primary font-mono">
+                    RM {Number(retryTarget?.totalCost).toFixed(2)}
+                  </span>
+                </div>
+                <Elements
+                  stripe={stripePromise}
+                  options={{
+                    clientSecret: retryIntentData.clientSecret,
+                    appearance: { theme: "stripe" },
+                  }}
+                >
+                  <PaymentForm
+                    amount={Number(retryTarget?.totalCost ?? 0)}
+                    onSuccess={handleRetrySuccess}
+                    onFailure={handleRetryFailure}
+                  />
+                </Elements>
+              </div>
+            )
+          )}
         </DialogContent>
       </Dialog>
     </div>

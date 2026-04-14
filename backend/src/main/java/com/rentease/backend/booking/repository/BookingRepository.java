@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,6 +28,10 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
      * excluding bookings with the specified statuses (e.g. CANCELLED).
      * Overlap condition: existing.start < newEnd AND existing.end > newStart
      */
+    @Query("SELECT b FROM Booking b WHERE b.status = :status AND b.createdAt < :cutoff")
+    List<Booking> findByStatusAndCreatedAtBefore(@Param("status") BookingStatus status,
+                                                  @Param("cutoff") LocalDateTime cutoff);
+
     @Query("SELECT COUNT(b) FROM Booking b " +
            "WHERE b.vehicle.id = :vehicleId " +
            "AND b.status NOT IN :excludedStatuses " +

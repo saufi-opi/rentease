@@ -90,6 +90,7 @@ const STATUS_BADGE: Record<string, React.ReactNode> = {
   PENDING: <Badge className="bg-amber-500 hover:bg-amber-600">Pending</Badge>,
   FAILED: <Badge className="bg-red-500 hover:bg-red-600">Failed</Badge>,
   REFUNDED: <Badge className="bg-purple-500 hover:bg-purple-600">Refunded</Badge>,
+  PARTIALLY_REFUNDED: <Badge className="bg-violet-500 hover:bg-violet-600">Part. Refunded</Badge>,
 }
 
 function AdminTransactions() {
@@ -228,7 +229,7 @@ function AdminTransactions() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {payment.status === "PAID" && (
+                    {(payment.status === "PAID" || payment.status === "PARTIALLY_REFUNDED") && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8">

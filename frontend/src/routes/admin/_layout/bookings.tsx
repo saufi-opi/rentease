@@ -60,6 +60,10 @@ const STATUS_CONFIG: Record<string, { label: string; badge: React.ReactNode }> =
       label: "Cancelled",
       badge: <Badge variant="destructive">Cancelled</Badge>,
     },
+    PAYMENT_FAILED: {
+      label: "Payment Failed",
+      badge: <Badge className="bg-red-700 hover:bg-red-800">Payment Failed</Badge>,
+    },
   }
 
 const TRANSITIONS: Record<
@@ -76,6 +80,9 @@ const TRANSITIONS: Record<
   ],
   ACTIVE: [
     { label: "Mark Completed", next: "COMPLETED" },
+    { label: "Cancel", next: "CANCELLED", destructive: true },
+  ],
+  PAYMENT_FAILED: [
     { label: "Cancel", next: "CANCELLED", destructive: true },
   ],
 }
@@ -177,6 +184,7 @@ function AdminBookings() {
                 <SelectItem value="CONFIRMED">Confirmed</SelectItem>
                 <SelectItem value="ACTIVE">Active</SelectItem>
                 <SelectItem value="COMPLETED">Completed</SelectItem>
+                <SelectItem value="PAYMENT_FAILED">Payment Failed</SelectItem>
                 <SelectItem value="CANCELLED">Cancelled</SelectItem>
               </SelectContent>
             </Select>

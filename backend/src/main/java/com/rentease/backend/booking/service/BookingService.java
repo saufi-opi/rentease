@@ -8,7 +8,9 @@ import com.rentease.backend.booking.model.BookingStatus;
 import com.rentease.backend.booking.repository.BookingRepository;
 import com.rentease.backend.common.exception.ConflictException;
 import com.rentease.backend.common.exception.ResourceNotFoundException;
+import com.rentease.backend.payment.model.PaymentStatus;
 import com.rentease.backend.payment.repository.PaymentRepository;
+import com.rentease.backend.payment.service.PaymentService;
 import com.rentease.backend.user.model.User;
 import com.rentease.backend.user.repository.UserRepository;
 import com.rentease.backend.vehicle.model.AvailabilityStatus;
@@ -36,6 +38,7 @@ public class BookingService {
     private final VehicleRepository vehicleRepository;
     private final UserRepository userRepository;
     private final PaymentRepository paymentRepository;
+    private final PaymentService paymentService;
 
     @Transactional
     public BookingResponse createBooking(BookingRequest request) {
@@ -55,9 +58,10 @@ public class BookingService {
             throw new ConflictException("Vehicle is not available for booking");
         }
 
+        // Exclude CANCELLED and PAYMENT_FAILED bookings from conflict check
         long conflicts = bookingRepository.countConflicts(
                 vehicle.getId(), request.getStartDate(), request.getEndDate(),
-                List.of(BookingStatus.CANCELLED));
+                List.of(BookingStatus.CANCELLED, BookingStatus.PAYMENT_FAILED));
         if (conflicts > 0) {
             throw new ConflictException("Vehicle is already booked for the selected dates");
         }
@@ -110,11 +114,28 @@ public class BookingService {
         if (!booking.getCustomer().getId().equals(userId)) {
             throw new RuntimeException("Access denied");
         }
-        if (booking.getStatus() != BookingStatus.PENDING && booking.getStatus() != BookingStatus.CONFIRMED) {
-            throw new RuntimeException("Only PENDING or CONFIRMED bookings can be cancelled");
+        if (booking.getStatus() != BookingStatus.PENDING
+                && booking.getStatus() != BookingStatus.CONFIRMED
+                && booking.getStatus() != BookingStatus.PAYMENT_FAILED) {
+            throw new RuntimeException("Only PENDING, PAYMENT_FAILED, or CONFIRMED bookings can be cancelled");
         }
 
+        // Auto-refund if there is a PAID payment
+        paymentRepository.findByBookingId(id).ifPresent(payment -> {
+            if (payment.getStatus() == PaymentStatus.PAID) {
+                paymentService.refund(payment.getId(), null);
+            }
+        });
+
         booking.setStatus(BookingStatus.CANCELLED);
+
+        // Restore vehicle availability if it was somehow marked BOOKED
+        Vehicle vehicle = booking.getVehicle();
+        if (vehicle.getAvailabilityStatus() == AvailabilityStatus.BOOKED) {
+            vehicle.setAvailabilityStatus(AvailabilityStatus.AVAILABLE);
+            vehicleRepository.save(vehicle);
+        }
+
         bookingRepository.save(booking);
     }
 
@@ -144,15 +165,29 @@ public class BookingService {
             throw new RuntimeException("Invalid booking status: " + newStatusStr);
         }
 
+        // Guard: CONFIRMED and ACTIVE transitions require a PAID payment
+        if (newStatus == BookingStatus.CONFIRMED || newStatus == BookingStatus.ACTIVE) {
+            Payment payment = paymentRepository.findByBookingId(booking.getId())
+                    .orElseThrow(() -> new RuntimeException(
+                            "Cannot advance booking: no payment found"));
+            if (payment.getStatus() != PaymentStatus.PAID) {
+                throw new RuntimeException(
+                        "Cannot advance booking: payment is not PAID (current: " + payment.getStatus() + ")");
+            }
+        }
+
         Vehicle vehicle = booking.getVehicle();
 
         if (newStatus == BookingStatus.ACTIVE) {
             vehicle.setAvailabilityStatus(AvailabilityStatus.BOOKED);
             vehicleRepository.save(vehicle);
-        } else if ((newStatus == BookingStatus.COMPLETED || newStatus == BookingStatus.CANCELLED)
-                && booking.getStatus() == BookingStatus.ACTIVE) {
-            vehicle.setAvailabilityStatus(AvailabilityStatus.AVAILABLE);
-            vehicleRepository.save(vehicle);
+        } else if (newStatus == BookingStatus.COMPLETED || newStatus == BookingStatus.CANCELLED) {
+            // Restore availability whenever the rental ends or is cancelled,
+            // regardless of which state it was in (ACTIVE or earlier)
+            if (vehicle.getAvailabilityStatus() == AvailabilityStatus.BOOKED) {
+                vehicle.setAvailabilityStatus(AvailabilityStatus.AVAILABLE);
+                vehicleRepository.save(vehicle);
+            }
         }
 
         booking.setStatus(newStatus);
@@ -185,8 +220,8 @@ public class BookingService {
             }
         }
 
-        String paymentStatus = paymentRepository.findByBookingId(booking.getId())
-                .map(p -> p.getStatus().name())
+        PaymentStatus paymentStatus = paymentRepository.findByBookingId(booking.getId())
+                .map(com.rentease.backend.payment.model.Payment::getStatus)
                 .orElse(null);
 
         return BookingResponse.builder()
@@ -204,7 +239,7 @@ public class BookingService {
                 .endDate(booking.getEndDate())
                 .rentalDays((int) days)
                 .totalCost(booking.getTotalCost())
-                .status(booking.getStatus().name())
+                .status(booking.getStatus())
                 .paymentStatus(paymentStatus)
                 .confirmationRef(booking.getConfirmationRef())
                 .createdAt(booking.getCreatedAt())

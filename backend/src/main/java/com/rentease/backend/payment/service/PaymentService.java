@@ -1,7 +1,10 @@
 package com.rentease.backend.payment.service;
 
+import com.rentease.backend.auth.security.SecurityUtils;
 import com.rentease.backend.booking.model.Booking;
+import com.rentease.backend.booking.model.BookingStatus;
 import com.rentease.backend.booking.repository.BookingRepository;
+import com.rentease.backend.vehicle.model.AvailabilityStatus;
 import com.rentease.backend.common.exception.ResourceNotFoundException;
 import com.rentease.backend.payment.controller.*;
 import com.rentease.backend.payment.model.Payment;
@@ -50,15 +53,41 @@ public class PaymentService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
-        // If a pending payment already exists for this booking, return its intent
+        // Ownership check — only the booking's customer can initiate payment
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+        if (!booking.getCustomer().getId().equals(currentUserId)) {
+            throw new RuntimeException("Access denied");
+        }
+
+        // Only allow payment for bookings that are awaiting payment
+        if (booking.getStatus() != BookingStatus.PENDING
+                && booking.getStatus() != BookingStatus.PAYMENT_FAILED) {
+            throw new RuntimeException("Payment is not required for this booking (status: " + booking.getStatus() + ")");
+        }
+
+        // Cancel any existing PENDING payment intent on Stripe and delete the local record
         paymentRepository.findByBookingId(bookingId).ifPresent(existing -> {
-            if (existing.getStatus() == PaymentStatus.PENDING) {
+            if (existing.getStatus() == PaymentStatus.PENDING
+                    || existing.getStatus() == PaymentStatus.FAILED) {
+                if (existing.getGatewayTransactionId() != null
+                        && existing.getStatus() == PaymentStatus.PENDING) {
+                    try {
+                        PaymentIntent.retrieve(existing.getGatewayTransactionId()).cancel();
+                    } catch (StripeException ignored) {
+                        // best-effort — intent may already be expired/cancelled
+                    }
+                }
                 paymentRepository.delete(existing);
             }
         });
 
+        // Reset booking to PENDING in case it was PAYMENT_FAILED
+        if (booking.getStatus() == BookingStatus.PAYMENT_FAILED) {
+            booking.setStatus(BookingStatus.PENDING);
+            bookingRepository.save(booking);
+        }
+
         BigDecimal amount = booking.getTotalCost();
-        // Stripe uses smallest currency unit (cents). MYR: multiply by 100
         long amountInCents = amount.multiply(BigDecimal.valueOf(100)).setScale(0, RoundingMode.HALF_UP).longValue();
 
         try {
@@ -94,6 +123,14 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse confirmPayment(String paymentIntentId) {
+        Payment payment = paymentRepository.findByGatewayTransactionId(paymentIntentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment record not found"));
+
+        // Idempotency: already confirmed — return without re-processing
+        if (payment.getStatus() == PaymentStatus.PAID) {
+            return mapToResponse(payment);
+        }
+
         try {
             PaymentIntent intent = PaymentIntent.retrieve(paymentIntentId);
 
@@ -101,11 +138,9 @@ public class PaymentService {
                 throw new RuntimeException("Payment has not succeeded. Current status: " + intent.getStatus());
             }
 
-            Payment payment = paymentRepository.findByGatewayTransactionId(paymentIntentId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Payment record not found"));
-
             String chargeId = intent.getLatestCharge();
-            String paymentMethodType = intent.getPaymentMethodTypes() != null && !intent.getPaymentMethodTypes().isEmpty()
+            String paymentMethodType = intent.getPaymentMethodTypes() != null
+                    && !intent.getPaymentMethodTypes().isEmpty()
                     ? intent.getPaymentMethodTypes().get(0).toUpperCase()
                     : null;
 
@@ -114,8 +149,17 @@ public class PaymentService {
             payment.setGatewayRef(chargeId);
             payment.setPaymentType(paymentMethodType);
             payment.setPaymentMethod(paymentMethodType);
+            paymentRepository.save(payment);
 
-            return mapToResponse(paymentRepository.save(payment));
+            // Auto-confirm the booking now that payment is received
+            Booking booking = payment.getBooking();
+            if (booking.getStatus() == BookingStatus.PENDING
+                    || booking.getStatus() == BookingStatus.PAYMENT_FAILED) {
+                booking.setStatus(BookingStatus.CONFIRMED);
+                bookingRepository.save(booking);
+            }
+
+            return mapToResponse(payment);
 
         } catch (StripeException e) {
             throw new RuntimeException("Failed to confirm payment: " + e.getMessage(), e);
@@ -125,9 +169,18 @@ public class PaymentService {
     @Transactional
     public void handleFailedPayment(String paymentIntentId, String reason) {
         paymentRepository.findByGatewayTransactionId(paymentIntentId).ifPresent(payment -> {
-            payment.setStatus(PaymentStatus.FAILED);
-            payment.setFailureReason(reason != null ? reason : "Payment declined");
-            paymentRepository.save(payment);
+            if (payment.getStatus() == PaymentStatus.PENDING) {
+                payment.setStatus(PaymentStatus.FAILED);
+                payment.setFailureReason(reason != null ? reason : "Payment declined");
+                paymentRepository.save(payment);
+
+                // Mark the booking so the customer sees it clearly
+                Booking booking = payment.getBooking();
+                if (booking.getStatus() == BookingStatus.PENDING) {
+                    booking.setStatus(BookingStatus.PAYMENT_FAILED);
+                    bookingRepository.save(booking);
+                }
+            }
         });
     }
 
@@ -146,7 +199,8 @@ public class PaymentService {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
 
-        if (payment.getStatus() != PaymentStatus.PAID) {
+        if (payment.getStatus() != PaymentStatus.PAID
+                && payment.getStatus() != PaymentStatus.PARTIALLY_REFUNDED) {
             throw new RuntimeException("Only PAID payments can be refunded");
         }
         if (payment.getGatewayTransactionId() == null) {
@@ -154,7 +208,15 @@ public class PaymentService {
         }
 
         BigDecimal amountToRefund = refundAmount != null ? refundAmount : payment.getAmount();
-        long amountInCents = amountToRefund.multiply(BigDecimal.valueOf(100)).setScale(0, RoundingMode.HALF_UP).longValue();
+
+        // Accumulate total refunded so multiple partial refunds are tracked correctly
+        BigDecimal alreadyRefunded = payment.getRefundAmount() != null
+                ? payment.getRefundAmount() : BigDecimal.ZERO;
+        BigDecimal totalRefunded = alreadyRefunded.add(amountToRefund);
+        boolean isFullyRefunded = totalRefunded.compareTo(payment.getAmount()) >= 0;
+
+        long amountInCents = amountToRefund.multiply(BigDecimal.valueOf(100))
+                .setScale(0, RoundingMode.HALF_UP).longValue();
 
         try {
             RefundCreateParams params = RefundCreateParams.builder()
@@ -164,12 +226,27 @@ public class PaymentService {
 
             Refund stripeRefund = Refund.create(params);
 
-            payment.setStatus(PaymentStatus.REFUNDED);
+            payment.setStatus(isFullyRefunded ? PaymentStatus.REFUNDED : PaymentStatus.PARTIALLY_REFUNDED);
             payment.setRefundId(stripeRefund.getId());
-            payment.setRefundAmount(amountToRefund);
+            payment.setRefundAmount(totalRefunded);
             payment.setRefundedAt(LocalDateTime.now());
+            paymentRepository.save(payment);
 
-            return mapToResponse(paymentRepository.save(payment));
+            // Auto-cancel the booking on a full refund
+            if (isFullyRefunded) {
+                Booking booking = payment.getBooking();
+                if (booking.getStatus() != BookingStatus.CANCELLED
+                        && booking.getStatus() != BookingStatus.COMPLETED) {
+                    // Restore vehicle availability if the booking was active
+                    if (booking.getStatus() == BookingStatus.ACTIVE) {
+                        booking.getVehicle().setAvailabilityStatus(AvailabilityStatus.AVAILABLE);
+                    }
+                    booking.setStatus(BookingStatus.CANCELLED);
+                    bookingRepository.save(booking);
+                }
+            }
+
+            return mapToResponse(payment);
 
         } catch (StripeException e) {
             throw new RuntimeException("Failed to process refund: " + e.getMessage(), e);
@@ -194,7 +271,7 @@ public class PaymentService {
                 .customerName(booking.getCustomer().getFullName())
                 .vehicleName(booking.getVehicle().getBrand() + " " + booking.getVehicle().getModel())
                 .amount(payment.getAmount())
-                .status(payment.getStatus().name())
+                .status(payment.getStatus())
                 .paymentType(payment.getPaymentType())
                 .gatewayTransactionId(payment.getGatewayTransactionId())
                 .paymentDate(payment.getPaymentDate())

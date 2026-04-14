@@ -1,5 +1,6 @@
 package com.rentease.backend.payment.controller;
 
+import com.rentease.backend.payment.model.PaymentStatus;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -16,7 +17,7 @@ public class PaymentResponse {
     private String customerName;
     private String vehicleName;
     private BigDecimal amount;
-    private String status;
+    private PaymentStatus status;
     private String paymentType;
     private String gatewayTransactionId;
     private LocalDateTime paymentDate;
