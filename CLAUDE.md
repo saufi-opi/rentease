@@ -63,7 +63,8 @@ Located at `backend/src/main/java/com/rentease/backend/`:
 - `auth/` — JWT authentication: `AuthController` (login), `JwtTokenProvider`, `JwtAuthenticationFilter`, `SecurityConfig`
 - `user/` — User management: CRUD, role-based access (`ADMIN`, `TOP_MANAGEMENT`, regular users)
 - `vehicle/` — Vehicle CRUD with pagination/filtering via `VehicleSpecification` (JPA Criteria). Supports filtering by type, brand, keyword, price range, and date-range availability (subquery excludes vehicles with overlapping non-cancelled bookings). Key enums: `AvailabilityStatus` (`AVAILABLE`, `RENTED`, `MAINTENANCE`), `TransmissionType`, `VehicleFeature`. The `discount` field is a percentage (DECIMAL 5,2); booking cost = `rental_rate * (1 - discount/100) * days` (calculated client-side).
-- `booking/` — Booking lifecycle: customers create bookings (`PENDING`), admins approve/reject via status update. Bookings include a `confirmationRef` UUID. Customers can cancel their own bookings; admins see all with pagination and status filter.
+- `booking/` — Booking lifecycle (see state machine below). Bookings include a `confirmationRef` UUID prefixed `RB-`. Customers can cancel their own bookings; admins see all with pagination and status filter.
+- `payment/` — Stripe payment integration (see Payment Flow below).
 - `common/` — Cross-cutting: `GlobalExceptionHandler`, `FileStorageService` (local `uploads/` dir), `DataInitializer` (seeds default admin on startup), `WebMvcConfig` (CORS, static file serving)
 
 **API base path**: `/api/v1/`
@@ -73,9 +74,24 @@ Located at `backend/src/main/java/com/rentease/backend/`:
 - Admin-only: `/api/v1/admin/**`
 - Everything else requires authentication
 
-**Database migrations** are in `backend/src/main/resources/db/migration/` (Flyway). Schema: users → vehicles → bookings → payments → maintenance → feedback/reports.
+**Database migrations** are in `backend/src/main/resources/db/migration/` (Flyway). Schema order: users → vehicles → bookings → payments → maintenance → feedback/reports. JPA is set to `ddl-auto=validate` — all schema changes must go through Flyway migrations.
 
-JPA is set to `ddl-auto=validate` — all schema changes must go through Flyway migrations.
+### Booking Status State Machine
+
+`BookingStatus` values: `PENDING` → `CONFIRMED` → `ACTIVE` → `COMPLETED` (or `CANCELLED` at any stage by customer/admin).
+
+- When a booking becomes `ACTIVE`, the vehicle's `AvailabilityStatus` is set to `RENTED`.
+- On `COMPLETED` or `CANCELLED` from `ACTIVE`, the vehicle reverts to `AVAILABLE`.
+
+### Payment Flow (Stripe)
+
+1. Customer submits booking → backend calls Stripe to create a PaymentIntent, returns `clientSecret` + `publishableKey` + `paymentId`.
+2. Frontend renders `PaymentForm.tsx` (Stripe PaymentElement — card + FPX tabs).
+3. On Stripe success → `confirmPayment()` marks payment `PAID`, stores charge ID and payment method type.
+4. On failure → `handleFailedPayment()` marks payment `FAILED` with reason.
+5. Admin can trigger full/partial refunds; payment status becomes `REFUNDED`.
+
+`Payment.status` enum: `PENDING`, `PAID`, `FAILED`, `REFUNDED`. Revenue endpoint (`GET /api/v1/admin/payments/revenue`) returns monthly + total paid amounts.
 
 ### Frontend Structure
 
@@ -86,13 +102,13 @@ Located at `frontend/src/`:
   - `login.tsx`, `signup.tsx` — public pages
   - `_layout.tsx` — authenticated user layout (header + profile sidebar). Guards with `isLoggedIn()`.
   - `_layout/` — user-facing pages: `bookings.tsx`, `favourites.tsx`, `profile.tsx`
-  - `vehicles/` — public vehicle listing (`index.tsx`), detail (`$id/index.tsx`), and booking form (`$id/book.tsx`). The booking form accepts `?pickup=` and `?return=` search params, calculates cost client-side using `rental_rate` and `discount`, and requires authentication.
+  - `vehicles/` — public vehicle listing (`index.tsx`), detail (`$id/index.tsx`), and booking form (`$id/book.tsx`). The booking form is a 3-step flow: date selection → Stripe payment (`PaymentForm.tsx`) → receipt (`DigitalReceipt.tsx`). Accepts `?pickup=` and `?return=` search params; calculates cost client-side using `rental_rate` and `discount`.
   - `admin/_layout.tsx` — admin layout (sidebar + header). Guards: authenticated + role `ADMIN` or `TOP_MANAGEMENT`.
-  - `admin/_layout/` — admin pages: `dashboard.tsx`, `vehicles.tsx`, `bookings.tsx`
+  - `admin/_layout/` — admin pages: `dashboard.tsx` (revenue card; other stats stubbed), `vehicles.tsx`, `bookings.tsx` (status transitions via dropdown), `transactions.tsx` (payment list)
 - `components/` — UI components using shadcn/ui (Radix UI primitives + Tailwind). Notable custom pickers: `date-picker.tsx` (single date, closes on select) and `date-range-picker.tsx` (range, kept for potential reuse). Both disable past dates and accept an optional `disabled` callback for additional constraints.
 - `hooks/` — custom hooks:
   - `useAuth` — current user auth state
-  - `useDataTableHandlers` — pagination/sorting/search synced to URL query params; sort format is `field:asc|desc` (mapped to `±field` for API). Used by all admin data tables.
+  - `useDataTableHandlers` — pagination/sorting/search synced to URL query params. Sort format is `field:asc|desc` in URL, mapped to `±field` for API (`apiSort`). `skipSearchSync` option (default `true`) keeps search local without polluting the URL. Used by all admin data tables.
   - `useDebounce` — 500ms default, used in search inputs
   - `useCustomToast` — wrapper around sonner with `.success()` / `.error()` helpers
 - `lib/` — utilities:
@@ -120,11 +136,24 @@ Located at `frontend/src/`:
 
 Files are stored in `uploads/` at the project root. Backend serves them statically at `/uploads/**`. `FileStorageService` handles saving/deleting files. The upload directory is configurable via `app.upload-dir` in `application.properties` (default: `../uploads` relative to JAR).
 
+### Schema-Only Features (Not Yet Implemented)
+
+The Flyway migrations define tables for two future features that have **no backend Java code** (no controllers, services, or repositories):
+
+- **Maintenance** — `maintenance_records` + `maintenance_tasks` tables (V5 migration)
+- **Feedback & Damage Reports** — `feedbacks` + `damage_reports` tables (V6 migration)
+
 ### Environment Variables
 
 **Frontend** — create `frontend/.env`:
 ```
 VITE_API_URL=http://localhost:8081
+```
+
+**Backend** — create `backend/.env`:
+```
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
 ```
 
 **Backend** dev defaults (in `application.properties`):
