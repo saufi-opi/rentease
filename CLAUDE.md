@@ -99,9 +99,11 @@ Located at `frontend/src/`:
 
 - `client/` — Auto-generated API client from OpenAPI spec via `@hey-api/openapi-ts`. **Do not edit manually.** Regenerate with `npm run generate-client` after backend changes.
 - `routes/` — TanStack Router file-based routing:
+  - `index.tsx` — public landing page with marketing sections (hero, popular cars, testimonials, FAQ, etc.)
   - `login.tsx`, `signup.tsx` — public pages
   - `_layout.tsx` — authenticated user layout (header + profile sidebar). Guards with `isLoggedIn()`.
   - `_layout/` — user-facing pages: `bookings.tsx`, `favourites.tsx`, `profile.tsx`
+  - `vehicles/$id.tsx` — layout wrapper (just renders `<Outlet />`) required by TanStack Router for nested routes under a dynamic segment
   - `vehicles/` — public vehicle listing (`index.tsx`), detail (`$id/index.tsx`), and booking form (`$id/book.tsx`). The booking form is a 3-step flow: date selection → Stripe payment (`PaymentForm.tsx`) → receipt (`DigitalReceipt.tsx`). Accepts `?pickup=` and `?return=` search params; calculates cost client-side using `rental_rate` and `discount`.
   - `admin/_layout.tsx` — admin layout (sidebar + header). Guards: authenticated + role `ADMIN` or `TOP_MANAGEMENT`.
   - `admin/_layout/` — admin pages: `dashboard.tsx` (revenue card; other stats stubbed), `vehicles.tsx`, `bookings.tsx` (status transitions via dropdown), `transactions.tsx` (payment list)
@@ -111,6 +113,8 @@ Located at `frontend/src/`:
   - `useDataTableHandlers` — pagination/sorting/search synced to URL query params. Sort format is `field:asc|desc` in URL, mapped to `±field` for API (`apiSort`). `skipSearchSync` option (default `true`) keeps search local without polluting the URL. Used by all admin data tables.
   - `useDebounce` — 500ms default, used in search inputs
   - `useCustomToast` — wrapper around sonner with `.success()` / `.error()` helpers
+  - `useCopyToClipboard` — copies text to clipboard, returns `[copiedText, copy]`
+  - `useMobile` — returns boolean for mobile viewport breakpoint detection
 - `lib/` — utilities:
   - `react-query.ts` — exports `queryClient` used for prefetching in route `beforeLoad` guards
   - `axios.ts` — configures `OpenAPI.TOKEN` as an async function reading from localStorage (not a static value)
@@ -123,6 +127,8 @@ Located at `frontend/src/`:
 **API client usage**: Import generated service classes from `@/client`, e.g. `UserControllerService.getCurrentUser()`. The client is configured with axios and uses `VITE_API_URL` env var (defaults to `http://localhost:8081`).
 
 **Currency**: Prices are in Malaysian Ringgit (RM). `rental_rate` and `discounted_price` fields are `BigDecimal` on the backend; displayed as `RM X.XX` in the UI.
+
+**Animations**: `framer-motion` is used for page transitions and step animations (e.g., booking form steps). Use `AnimatePresence` + `motion.*` components for consistent enter/exit transitions.
 
 ### Auth Flow
 

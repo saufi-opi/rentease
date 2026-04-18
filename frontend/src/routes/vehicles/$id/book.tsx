@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Fuel,
   Loader2,
+  ScrollText,
   Users,
 } from "lucide-react"
 import { useMemo, useState } from "react"
@@ -20,6 +21,7 @@ import { LandingFooter } from "@/components/landing/LandingFooter"
 import { DigitalReceipt } from "@/components/payment/DigitalReceipt"
 import { PaymentForm } from "@/components/payment/PaymentForm"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { DatePicker } from "@/components/ui/date-picker"
 import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
@@ -56,7 +58,7 @@ export const Route = createFileRoute("/vehicles/$id/book")({
   component: BookingFormPage,
 })
 
-type Step = "dates" | "payment" | "receipt"
+type Step = "dates" | "tnc" | "payment" | "receipt"
 
 interface PaymentIntentData {
   clientSecret: string
@@ -85,6 +87,7 @@ function BookingFormPage() {
   const [paymentIntentData, setPaymentIntentData] = useState<PaymentIntentData | null>(null)
   const [paymentResult, setPaymentResult] = useState<PaymentResult | null>(null)
   const [isInitiating, setIsInitiating] = useState(false)
+  const [tncAccepted, setTncAccepted] = useState(false)
 
   const stripePromise = useMemo(
     () => (paymentIntentData?.publishableKey ? loadStripe(paymentIntentData.publishableKey) : null),
@@ -157,7 +160,7 @@ function BookingFormPage() {
     },
   })
 
-  const handleProceedToPayment = (e: React.FormEvent) => {
+  const handleProceedToTnc = (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     if (!startDate || !endDate) {
@@ -168,6 +171,10 @@ function BookingFormPage() {
       setError("Return date must be after pickup date.")
       return
     }
+    setStep("tnc")
+  }
+
+  const handleConfirmBooking = () => {
     createBooking()
   }
 
@@ -340,14 +347,19 @@ function BookingFormPage() {
                       Dates
                     </div>
                     <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                    <div className={`flex items-center gap-2 text-sm font-bold ${step === "tnc" ? "text-primary" : "text-muted-foreground"}`}>
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === "tnc" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>2</span>
+                      Terms
+                    </div>
+                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
                     <div className={`flex items-center gap-2 text-sm font-bold ${step === "payment" ? "text-primary" : "text-muted-foreground"}`}>
-                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === "payment" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>2</span>
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === "payment" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>3</span>
                       Payment
                     </div>
                   </div>
 
                   {step === "dates" && (
-                    <form onSubmit={handleProceedToPayment} className="space-y-6">
+                    <form onSubmit={handleProceedToTnc} className="space-y-6">
                       <h1 className="text-2xl font-bold">Select Your Dates</h1>
 
                       <div className="grid grid-cols-2 gap-3">
@@ -390,16 +402,129 @@ function BookingFormPage() {
                         <Button
                           type="submit"
                           className="flex-1 h-12 font-bold shadow-lg shadow-primary/20"
-                          disabled={isCreatingBooking || isInitiating || rentalDays < 1}
+                          disabled={rentalDays < 1}
                         >
-                          {isCreatingBooking || isInitiating ? (
-                            <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Preparing…</>
-                          ) : (
-                            <>Proceed to Payment · RM {rentalDays > 0 ? totalCost : "—"}</>
-                          )}
+                          Review Terms · RM {rentalDays > 0 ? totalCost : "—"}
                         </Button>
                       </div>
                     </form>
+                  )}
+
+                  {step === "tnc" && (
+                    <div className="space-y-6">
+                      <div>
+                        <h1 className="text-2xl font-bold">Review & Confirm</h1>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Please review your booking summary and agree to the terms before proceeding to payment.
+                        </p>
+                      </div>
+
+                      {/* Booking summary */}
+                      <div className="bg-muted/40 rounded-xl p-4 space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Vehicle</span>
+                          <span className="font-semibold">{vehicle.brand} {vehicle.model} ({vehicle.year})</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Pickup Date</span>
+                          <span className="font-semibold">{startDate}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Return Date</span>
+                          <span className="font-semibold">{endDate}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Duration</span>
+                          <span className="font-semibold">{rentalDays} day{rentalDays !== 1 ? "s" : ""}</span>
+                        </div>
+                        <div className="flex justify-between border-t border-border pt-2 mt-2">
+                          <span className="font-bold">Total Payable</span>
+                          <span className="font-black text-primary font-mono">RM {totalCost}</span>
+                        </div>
+                      </div>
+
+                      {/* T&C */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-sm font-semibold">
+                          <ScrollText className="h-4 w-4 text-primary" />
+                          Terms & Conditions
+                        </div>
+                        <div className="max-h-52 overflow-y-auto rounded-xl border border-border bg-muted/20 p-4 text-xs text-muted-foreground space-y-3 leading-relaxed">
+                          <p><strong className="text-foreground">1. Rental Period</strong><br />
+                          The rental period begins on the pickup date and ends on the return date as specified above. Late returns are subject to a surcharge of 50% of the daily rate per additional day.</p>
+
+                          <p><strong className="text-foreground">2. Driver Requirements</strong><br />
+                          The renter must hold a valid driving licence appropriate for the rented vehicle category. The licence must be presented upon vehicle collection. Minimum age is 21 years.</p>
+
+                          <p><strong className="text-foreground">3. Vehicle Condition & Damage</strong><br />
+                          The vehicle must be returned in the same condition as received. The renter is fully liable for any damage, loss, or theft occurring during the rental period. A damage assessment will be conducted upon return.</p>
+
+                          <p><strong className="text-foreground">4. Fuel Policy</strong><br />
+                          The vehicle is provided with a full tank and must be returned with a full tank. Failure to do so will incur a refuelling charge plus a service fee.</p>
+
+                          <p><strong className="text-foreground">5. Cancellation Policy</strong><br />
+                          Bookings cancelled within 24 hours of creation are eligible for a full refund. Cancellations made after 24 hours may be subject to a 50% cancellation fee. Cancellations within 12 hours of the pickup date are non-refundable.</p>
+
+                          <p><strong className="text-foreground">6. Prohibited Use</strong><br />
+                          The vehicle may not be sub-rented, used for commercial hire, used outside permitted areas, or operated under the influence of alcohol or drugs. Violation of this clause voids all insurance coverage.</p>
+
+                          <p><strong className="text-foreground">7. Insurance</strong><br />
+                          Basic insurance coverage is included. The renter is responsible for any excess/deductible amounts in the event of a claim. Comprehensive coverage upgrades are available at the rental counter.</p>
+                        </div>
+                      </div>
+
+                      {/* Checkbox */}
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          id="tnc-accept"
+                          checked={tncAccepted}
+                          onCheckedChange={(checked) => setTncAccepted(!!checked)}
+                          className="mt-0.5"
+                        />
+                        <label htmlFor="tnc-accept" className="text-sm cursor-pointer leading-relaxed">
+                          I have read and agree to the <span className="font-semibold text-foreground">Terms & Conditions</span> above. I confirm the booking details are correct.
+                        </label>
+                      </div>
+
+                      {error && (
+                        <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3">
+                          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                          {error}
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex gap-3 pt-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-12 px-5"
+                          onClick={() => { setStep("dates"); setTncAccepted(false) }}
+                        >
+                          <ArrowLeft className="h-4 w-4 mr-2" /> Edit Dates
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-12 px-5 text-muted-foreground"
+                          asChild
+                        >
+                          <Link to="/vehicles/$id" params={{ id }}>Cancel</Link>
+                        </Button>
+                        <Button
+                          type="button"
+                          className="flex-1 h-12 font-bold shadow-lg shadow-primary/20"
+                          disabled={!tncAccepted || isCreatingBooking || isInitiating}
+                          onClick={handleConfirmBooking}
+                        >
+                          {isCreatingBooking || isInitiating ? (
+                            <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Preparing Payment…</>
+                          ) : (
+                            <>Confirm & Pay RM {totalCost}</>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
                   )}
 
                   {step === "payment" && paymentIntentData && (
@@ -437,11 +562,11 @@ function BookingFormPage() {
                         size="sm"
                         className="text-muted-foreground"
                         onClick={() => {
-                          setStep("dates")
+                          setStep("tnc")
                           setError("")
                         }}
                       >
-                        <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Change dates
+                        <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back to review
                       </Button>
                     </div>
                   )}
