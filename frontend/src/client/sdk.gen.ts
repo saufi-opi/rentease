@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { LoginData, LoginResponse, UpdateBookingStatusData, UpdateBookingStatusResponse, GetMyBookingsResponse, CreateBookingData, CreateBookingResponse, GetBookingByIdData, GetBookingByIdResponse, CancelBookingData, CancelBookingResponse, GetAllBookingsData, GetAllBookingsResponse, UploadImageData, UploadImageResponse, RegisterData, RegisterResponse, GetCurrentUserResponse, DeleteProfileResponse, UpdateProfileData, UpdateProfileResponse, UpdateVehicleData, UpdateVehicleResponse, DeleteVehicleData, DeleteVehicleResponse, ListVehiclesData, ListVehiclesResponse, CreateVehicleData, CreateVehicleResponse, BrowseVehiclesData, BrowseVehiclesResponse, GetVehicleData, GetVehicleResponse, GetVehicleSuggestionsResponse } from './types.gen';
+import type { LoginData, LoginResponse, UpdateBookingStatusData, UpdateBookingStatusResponse, GetMyBookingsResponse, CreateBookingData, CreateBookingResponse, GetBookingByIdData, GetBookingByIdResponse, CancelBookingData, CancelBookingResponse, GetAllBookingsData, GetAllBookingsResponse, UploadImageData, UploadImageResponse, RegisterData, RegisterResponse, GetCurrentUserResponse, DeleteProfileResponse, UpdateProfileData, UpdateProfileResponse, UpdateVehicleData, UpdateVehicleResponse, DeleteVehicleData, DeleteVehicleResponse, ListVehiclesData, ListVehiclesResponse, CreateVehicleData, CreateVehicleResponse, BrowseVehiclesData, BrowseVehiclesResponse, GetVehicleData, GetVehicleResponse, GetVehicleSuggestionsResponse, ToggleFavouriteData, ToggleFavouriteResponse, GetFavouritesResponse, GetFavouriteIdsResponse, GetPopularVehiclesData, GetPopularVehiclesResponse } from './types.gen';
 
 export class AuthControllerService {
     /**
@@ -322,6 +322,22 @@ export class VehicleControllerService {
     }
     
     /**
+     * @param data The data for the request.
+     * @param data.limit
+     * @returns VehicleResponse OK
+     * @throws ApiError
+     */
+    public static getPopularVehicles(data: GetPopularVehiclesData = {}): CancelablePromise<GetPopularVehiclesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/vehicles/popular',
+            query: {
+                limit: data.limit
+            }
+        });
+    }
+
+    /**
      * @returns string OK
      * @throws ApiError
      */
@@ -329,6 +345,46 @@ export class VehicleControllerService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/vehicles/suggestions'
+        });
+    }
+}
+
+export class FavouriteControllerService {
+    /**
+     * @param data The data for the request.
+     * @param data.vehicleId
+     * @returns FavouriteToggleResponse OK
+     * @throws ApiError
+     */
+    public static toggle(data: ToggleFavouriteData): CancelablePromise<ToggleFavouriteResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/favourites/{vehicleId}',
+            path: {
+                vehicleId: data.vehicleId
+            }
+        });
+    }
+
+    /**
+     * @returns VehicleResponse OK
+     * @throws ApiError
+     */
+    public static getFavourites(): CancelablePromise<GetFavouritesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/favourites'
+        });
+    }
+
+    /**
+     * @returns string OK
+     * @throws ApiError
+     */
+    public static getFavouriteIds(): CancelablePromise<GetFavouriteIdsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/favourites/ids'
         });
     }
 }

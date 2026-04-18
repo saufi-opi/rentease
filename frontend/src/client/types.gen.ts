@@ -261,3 +261,23 @@ export type GetVehicleResponse = (VehicleResponse);
 export type GetVehicleSuggestionsResponse = ({
     [key: string]: Array<(string)>;
 });
+
+export type FavouriteToggleResponse = {
+    favourited: boolean;
+};
+
+export type ToggleFavouriteData = {
+    vehicleId: string;
+};
+
+export type ToggleFavouriteResponse = (FavouriteToggleResponse);
+
+export type GetFavouritesResponse = (Array<VehicleResponse>);
+
+export type GetFavouriteIdsResponse = (Array<string>);
+
+export type GetPopularVehiclesData = {
+    limit?: number;
+};
+
+export type GetPopularVehiclesResponse = (Array<VehicleResponse>);

@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { format, parseISO } from "date-fns"
 import { motion } from "framer-motion"
 import {
@@ -15,7 +15,8 @@ import {
   Users,
 } from "lucide-react"
 import { useEffect, useState } from "react"
-import { VehicleControllerService } from "@/client"
+import { FavouriteControllerService, VehicleControllerService } from "@/client"
+import { isLoggedIn } from "@/hooks/useAuth"
 import { AppHeader } from "@/components/Layout/AppHeader"
 import { LandingFooter } from "@/components/landing/LandingFooter"
 import { Button } from "@/components/ui/button"
@@ -49,8 +50,9 @@ const PRICE_MAX = 1000
 
 function VehiclesPage() {
   const search = Route.useSearch()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
-  const [favorites, setFavorites] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedType, setSelectedType] = useState<string>("")
   const [selectedBrand, setSelectedBrand] = useState<string>("")
@@ -122,10 +124,27 @@ function VehiclesPage() {
   const totalPages = data?.totalPages || 1
   const totalElements = data?.totalElements || 0
 
-  const toggleFavorite = (id: string) => {
-    setFavorites((prev) =>
-      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id],
-    )
+  const { data: favouriteIds = [] } = useQuery({
+    queryKey: ["favouriteIds"],
+    queryFn: () => FavouriteControllerService.getFavouriteIds(),
+    enabled: isLoggedIn(),
+  })
+
+  const { mutate: toggleFavourite } = useMutation({
+    mutationFn: (vehicleId: string) =>
+      FavouriteControllerService.toggle({ vehicleId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["favouriteIds"] })
+      queryClient.invalidateQueries({ queryKey: ["favourites"] })
+    },
+  })
+
+  const handleHeartClick = (vehicleId: string) => {
+    if (!isLoggedIn()) {
+      navigate({ to: "/login" })
+      return
+    }
+    toggleFavourite(vehicleId)
   }
 
   const resetFilters = () => {
@@ -399,11 +418,11 @@ function VehiclesPage() {
                       )}
                       <button
                         type="button"
-                        onClick={() => vehicle.id && toggleFavorite(vehicle.id)}
+                        onClick={() => vehicle.id && handleHeartClick(vehicle.id)}
                         className="absolute top-3 right-3 p-2 rounded-full bg-background/80 hover:bg-background transition-colors shadow-sm"
                       >
                         <Heart
-                          className={`h-5 w-5 ${vehicle.id && favorites.includes(vehicle.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"}`}
+                          className={`h-5 w-5 ${vehicle.id && favouriteIds.includes(vehicle.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"}`}
                         />
                       </button>
                       <div className="absolute bottom-3 left-3 p-1.5 rounded-full bg-primary text-primary-foreground shadow-lg">

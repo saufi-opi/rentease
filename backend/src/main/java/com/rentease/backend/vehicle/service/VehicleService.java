@@ -83,6 +83,13 @@ public class VehicleService {
         return mapToResponse(vehicle);
     }
 
+    public List<VehicleResponse> getPopularVehicles(int limit) {
+        return vehicleRepository.findPopularVehicles(Math.min(limit, 20))
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
     public java.util.Map<String, java.util.List<String>> getVehicleSuggestions() {
         try {
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();

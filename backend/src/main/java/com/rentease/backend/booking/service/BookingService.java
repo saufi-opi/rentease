@@ -8,6 +8,7 @@ import com.rentease.backend.booking.model.BookingStatus;
 import com.rentease.backend.booking.repository.BookingRepository;
 import com.rentease.backend.common.exception.ConflictException;
 import com.rentease.backend.common.exception.ResourceNotFoundException;
+import com.rentease.backend.payment.model.Payment;
 import com.rentease.backend.payment.model.PaymentStatus;
 import com.rentease.backend.payment.repository.PaymentRepository;
 import com.rentease.backend.payment.service.PaymentService;

@@ -91,6 +91,15 @@ public class VehicleController {
     }
 
     /**
+     * Get most booked vehicles (popular).
+     */
+    @GetMapping("/api/v1/vehicles/popular")
+    public java.util.List<VehicleResponse> getPopularVehicles(
+            @RequestParam(defaultValue = "6") int limit) {
+        return vehicleService.getPopularVehicles(limit);
+    }
+
+    /**
      * Get auto-complete suggestions for vehicle brands and models.
      */
     @GetMapping("/api/v1/vehicles/suggestions")
