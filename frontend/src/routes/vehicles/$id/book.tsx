@@ -407,25 +407,10 @@ function BookingFormPage() {
                         </div>
                       </div>
 
-                      {maintenanceConflict && (
-                        <div className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3">
-                          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-amber-500" />
-                          <div>
-                            <p className="font-medium">Maintenance scheduled during this period</p>
-                            <p className="text-xs mt-0.5 opacity-80">
-                              This vehicle has a{" "}
-                              {maintenanceConflict.maintenanceType?.replace(/_/g, " ")} scheduled
-                              from {maintenanceConflict.scheduledStartDate} to{" "}
-                              {maintenanceConflict.estimatedEndDate}. Your booking may not be confirmed.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {error && (
+                      {(error || maintenanceConflict) && (
                         <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3">
                           <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                          {error}
+                          {error || "Vehicle is not available for the selected dates."}
                         </div>
                       )}
 
@@ -438,7 +423,7 @@ function BookingFormPage() {
                         <Button
                           type="submit"
                           className="flex-1 h-12 font-bold shadow-lg shadow-primary/20"
-                          disabled={rentalDays < 1}
+                          disabled={rentalDays < 1 || !!maintenanceConflict}
                         >
                           Review Terms · RM {rentalDays > 0 ? totalCost : "—"}
                         </Button>

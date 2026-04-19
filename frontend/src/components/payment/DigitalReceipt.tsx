@@ -54,8 +54,8 @@ export function DigitalReceipt({ receipt }: DigitalReceiptProps) {
 
       <div id="receipt-print" className="w-full max-w-sm">
         {/* Success header */}
-        <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-6 mx-auto">
-          <CheckCircle2 className="h-10 w-10 text-green-600 dark:text-green-400" />
+        <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-6 mx-auto">
+          <CheckCircle2 className="h-10 w-10 text-green-600" />
         </div>
         <h1 className="text-3xl font-bold mb-1">Payment Successful!</h1>
         <p className="text-muted-foreground mb-8">
