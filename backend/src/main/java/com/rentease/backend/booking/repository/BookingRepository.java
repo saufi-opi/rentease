@@ -41,4 +41,18 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate,
                         @Param("excludedStatuses") List<BookingStatus> excludedStatuses);
+
+    @Query("SELECT b.confirmationRef FROM Booking b " +
+           "WHERE b.vehicle.id = :vehicleId " +
+           "AND b.status NOT IN :excludedStatuses " +
+           "AND b.startDate < :endDate " +
+           "AND b.endDate > :startDate")
+    List<String> findConflictingRefs(@Param("vehicleId") UUID vehicleId,
+                                      @Param("startDate") LocalDate startDate,
+                                      @Param("endDate") LocalDate endDate,
+                                      @Param("excludedStatuses") List<BookingStatus> excludedStatuses);
+
+    Page<Booking> findByVehicle_IdOrderByCreatedAtDesc(UUID vehicleId, Pageable pageable);
+
+    Page<Booking> findByVehicle_IdAndStatusOrderByCreatedAtDesc(UUID vehicleId, BookingStatus status, Pageable pageable);
 }

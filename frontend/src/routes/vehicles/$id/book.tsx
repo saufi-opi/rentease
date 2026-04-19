@@ -15,7 +15,7 @@ import {
   Users,
 } from "lucide-react"
 import { useMemo, useState } from "react"
-import { BookingControllerService, VehicleControllerService } from "@/client"
+import { BookingControllerService, MaintenanceControllerService, VehicleControllerService } from "@/client"
 import { AppHeader } from "@/components/Layout/AppHeader"
 import { LandingFooter } from "@/components/landing/LandingFooter"
 import { DigitalReceipt } from "@/components/payment/DigitalReceipt"
@@ -112,6 +112,27 @@ function BookingFormPage() {
     queryKey: ["vehicle", id],
     queryFn: () => VehicleControllerService.getVehicle({ id }),
   })
+
+  const { data: maintenanceData } = useQuery({
+    queryKey: ["vehicle-maintenance-public", id],
+    queryFn: () => MaintenanceControllerService.getVehicleMaintenance({ vehicleId: id, size: 50 }),
+    staleTime: 60_000,
+  })
+
+  const maintenanceConflict = useMemo(() => {
+    if (!startDate || !endDate || !maintenanceData?.content) return null
+    const s = new Date(startDate)
+    const e = new Date(endDate)
+    return (
+      maintenanceData.content.find((m) => {
+        if (m.status !== "SCHEDULED" && m.status !== "IN_PROGRESS") return false
+        if (!m.scheduledStartDate || !m.estimatedEndDate) return false
+        const ms = new Date(m.scheduledStartDate)
+        const me = new Date(m.estimatedEndDate)
+        return ms < e && me > s
+      }) ?? null
+    )
+  }, [maintenanceData, startDate, endDate])
 
   const rentalDays = useMemo(() => {
     if (!startDateObj || !endDateObj) return 0
@@ -385,6 +406,21 @@ function BookingFormPage() {
                           />
                         </div>
                       </div>
+
+                      {maintenanceConflict && (
+                        <div className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3">
+                          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-amber-500" />
+                          <div>
+                            <p className="font-medium">Maintenance scheduled during this period</p>
+                            <p className="text-xs mt-0.5 opacity-80">
+                              This vehicle has a{" "}
+                              {maintenanceConflict.maintenanceType?.replace(/_/g, " ")} scheduled
+                              from {maintenanceConflict.scheduledStartDate} to{" "}
+                              {maintenanceConflict.estimatedEndDate}. Your booking may not be confirmed.
+                            </p>
+                          </div>
+                        </div>
+                      )}
 
                       {error && (
                         <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3">

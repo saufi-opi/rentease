@@ -63,7 +63,7 @@ Located at `backend/src/main/java/com/rentease/backend/`:
 - `auth/` — JWT authentication: `AuthController` (login), `JwtTokenProvider`, `JwtAuthenticationFilter`, `SecurityConfig`
 - `user/` — User management: CRUD, role-based access (`ADMIN`, `TOP_MANAGEMENT`, regular users)
 - `vehicle/` — Vehicle CRUD with pagination/filtering via `VehicleSpecification` (JPA Criteria). Supports filtering by type, brand, keyword, price range, and date-range availability (subquery excludes vehicles with overlapping non-cancelled bookings). Key enums: `AvailabilityStatus` (`AVAILABLE`, `RENTED`, `MAINTENANCE`), `TransmissionType`, `VehicleFeature`. The `discount` field is a percentage (DECIMAL 5,2); booking cost = `rental_rate * (1 - discount/100) * days` (calculated client-side).
-- `booking/` — Booking lifecycle (see state machine below). Bookings include a `confirmationRef` UUID prefixed `RB-`. Customers can cancel their own bookings; admins see all with pagination and status filter.
+- `booking/` — Booking lifecycle (see state machine below). Bookings include a `confirmationRef` UUID prefixed `RB-`. Customers can cancel their own bookings; admins see all with pagination and status filter. `BookingExpirationJob` (scheduled every hour) auto-cancels PENDING bookings with no payment after 30 minutes and voids the Stripe PaymentIntent.
 - `payment/` — Stripe payment integration (see Payment Flow below).
 - `favourite/` — User favourites: `Favourite` entity (`user_favourites` table, V13 migration), `FavouriteController` endpoints: `POST /api/v1/favourites/{vehicleId}` (toggle add/remove), `GET /api/v1/favourites` (list as `VehicleResponse`), `GET /api/v1/favourites/ids` (UUID list for client-side heart state). All require authentication.
 - `common/` — Cross-cutting: `GlobalExceptionHandler`, `FileStorageService` (local `uploads/` dir), `DataInitializer` (seeds default admin on startup), `WebMvcConfig` (CORS, static file serving)
@@ -107,7 +107,7 @@ Located at `frontend/src/`:
   - `vehicles/$id.tsx` — layout wrapper (just renders `<Outlet />`) required by TanStack Router for nested routes under a dynamic segment
   - `vehicles/` — public vehicle listing (`index.tsx`), detail (`$id/index.tsx`), and booking form (`$id/book.tsx`). The booking form is a **4-step flow**: date selection → T&C review (checkbox confirmation, edit/cancel/confirm buttons) → Stripe payment (`PaymentForm.tsx`) → receipt (`DigitalReceipt.tsx`). The booking and payment intent are only created after the user confirms T&C. Accepts `?pickup=` and `?return=` search params; calculates cost client-side using `rental_rate` and `discount`.
   - `admin/_layout.tsx` — admin layout (sidebar + header). Guards: authenticated + role `ADMIN` or `TOP_MANAGEMENT`.
-  - `admin/_layout/` — admin pages: `dashboard.tsx` (revenue card; other stats stubbed), `vehicles.tsx`, `bookings.tsx` (status transitions via dropdown), `transactions.tsx` (payment list)
+  - `admin/_layout/` — admin pages: `dashboard.tsx` (revenue card; other stats stubbed), `vehicles.tsx`, `bookings.tsx` (status transitions via dropdown), `transactions.tsx` (payment list), `maintenance.tsx` (maintenance record CRUD)
 - `components/` — UI components using shadcn/ui (Radix UI primitives + Tailwind). Notable custom pickers: `date-picker.tsx` (single date, closes on select) and `date-range-picker.tsx` (range, kept for potential reuse). Both disable past dates and accept an optional `disabled` callback for additional constraints.
 - `hooks/` — custom hooks:
   - `useAuth` — current user auth state
@@ -143,11 +143,14 @@ Located at `frontend/src/`:
 
 Files are stored in `uploads/` at the project root. Backend serves them statically at `/uploads/**`. `FileStorageService` handles saving/deleting files. The upload directory is configurable via `app.upload-dir` in `application.properties` (default: `../uploads` relative to JAR).
 
+### Maintenance Module
+
+`maintenance/` — fully implemented: `MaintenanceController` exposes admin-only CRUD at `/api/v1/admin/maintenance`. `MaintenanceStatus` enum tracks record lifecycle. Records are linked to vehicles; admins can filter by status or vehicleId. Frontend admin page at `admin/_layout/maintenance.tsx`.
+
 ### Schema-Only Features (Not Yet Implemented)
 
-The Flyway migrations define tables for two future features that have **no backend Java code** (no controllers, services, or repositories):
+The Flyway migrations define tables for one future feature that has **no backend Java code** (no controllers, services, or repositories):
 
-- **Maintenance** — `maintenance_records` + `maintenance_tasks` tables (V5 migration)
 - **Feedback & Damage Reports** — `feedbacks` + `damage_reports` tables (V6 migration)
 
 ### Environment Variables

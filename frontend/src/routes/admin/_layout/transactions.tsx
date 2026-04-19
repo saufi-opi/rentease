@@ -8,6 +8,7 @@ import {
   Loader2,
   MoreHorizontal,
   Receipt,
+  Search,
 } from "lucide-react"
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
@@ -25,6 +26,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -54,11 +62,15 @@ async function apiPost<T>(path: string, body: unknown): Promise<T> {
   return res.json()
 }
 
-async function fetchPayments(page: number, size: number) {
-  const res = await fetch(
-    `${API_BASE}/api/v1/admin/payments?page=${page}&size=${size}`,
-    { headers: { Authorization: `Bearer ${getAccessToken()}` } },
-  )
+async function fetchPayments(page: number, size: number, status?: string) {
+  const params = new URLSearchParams({
+    page: String(page),
+    size: String(size),
+  })
+  if (status) params.set("status", status)
+  const res = await fetch(`${API_BASE}/api/v1/admin/payments?${params}`, {
+    headers: { Authorization: `Bearer ${getAccessToken()}` },
+  })
   if (!res.ok) throw new Error("Failed to fetch payments")
   return res.json()
 }
@@ -93,21 +105,30 @@ const STATUS_BADGE: Record<string, React.ReactNode> = {
   PARTIALLY_REFUNDED: <Badge className="bg-violet-500 hover:bg-violet-600">Part. Refunded</Badge>,
 }
 
+const PAGE_SIZE = 10
+
 function AdminTransactions() {
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const queryClient = useQueryClient()
-  const [page, setPage] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
   const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState("ALL")
   const [refundTarget, setRefundTarget] = useState<PaymentRecord | null>(null)
   const [refundAmountInput, setRefundAmountInput] = useState("")
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin-payments", page],
-    queryFn: () => fetchPayments(page, 10),
+    queryKey: ["admin-payments", currentPage, statusFilter],
+    queryFn: () =>
+      fetchPayments(
+        currentPage - 1,
+        PAGE_SIZE,
+        statusFilter !== "ALL" ? statusFilter : undefined,
+      ),
   })
 
   const payments: PaymentRecord[] = data?.content ?? []
   const totalPages: number = data?.totalPages ?? 1
+  const totalElements: number = data?.totalElements ?? 0
 
   const filteredPayments = search
     ? payments.filter(
@@ -140,148 +161,196 @@ function AdminTransactions() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Receipt className="h-6 w-6 text-primary" />
-          Transaction Log
-        </h1>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <Receipt className="h-8 w-8 text-primary" />
+            Transaction Log
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            View and manage all payment transactions and refunds.
+          </p>
+        </div>
       </div>
 
-      {/* Search */}
-      <div className="relative w-72">
-        <Input
-          placeholder="Search by ref, customer or vehicle…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-3"
-        />
-      </div>
+      <div className="bg-card border border-border rounded-xl shadow-sm p-4">
+        <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-6">
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="relative w-full md:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search ref, customer or vehicle…"
+                className="pl-9"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value)
+                  setCurrentPage(1)
+                }}
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => {
+                setStatusFilter(v)
+                setCurrentPage(1)
+              }}
+            >
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Status</SelectItem>
+                <SelectItem value="PAID">Paid</SelectItem>
+                <SelectItem value="PENDING">Pending</SelectItem>
+                <SelectItem value="FAILED">Failed</SelectItem>
+                <SelectItem value="REFUNDED">Refunded</SelectItem>
+                <SelectItem value="PARTIALLY_REFUNDED">Part. Refunded</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-      <div className="rounded-xl border border-border overflow-hidden bg-card shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/30">
-              <TableHead className="font-bold">Date</TableHead>
-              <TableHead className="font-bold">Ref</TableHead>
-              <TableHead className="font-bold">Customer</TableHead>
-              <TableHead className="font-bold">Vehicle</TableHead>
-              <TableHead className="font-bold">Method</TableHead>
-              <TableHead className="font-bold text-right">Amount</TableHead>
-              <TableHead className="font-bold">Status</TableHead>
-              <TableHead className="w-12" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
+        <div className="rounded-md border border-border overflow-hidden">
+          <Table>
+            <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableCell colSpan={8} className="py-16 text-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" />
-                </TableCell>
+                <TableHead>Date</TableHead>
+                <TableHead>Ref</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Vehicle</TableHead>
+                <TableHead>Method</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ) : filteredPayments.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={8}
-                  className="py-16 text-center text-muted-foreground"
-                >
-                  No transactions found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredPayments.map((payment) => (
-                <TableRow key={payment.id} className="hover:bg-muted/20">
-                  <TableCell className="text-sm text-muted-foreground">
-                    {payment.paymentDate
-                      ? format(parseISO(payment.paymentDate), "d MMM yyyy")
-                      : payment.createdAt
-                        ? format(parseISO(payment.createdAt), "d MMM yyyy")
-                        : "—"}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs font-bold text-primary">
-                    {payment.confirmationRef}
-                  </TableCell>
-                  <TableCell className="text-sm">{payment.customerName}</TableCell>
-                  <TableCell className="text-sm">{payment.vehicleName}</TableCell>
-                  <TableCell>
-                    {payment.paymentType === "FPX" ? (
-                      <span className="flex items-center gap-1 text-xs font-medium">
-                        <Landmark className="h-3.5 w-3.5" /> FPX
-                      </span>
-                    ) : payment.paymentType === "CARD" ? (
-                      <span className="flex items-center gap-1 text-xs font-medium">
-                        <CreditCard className="h-3.5 w-3.5" /> Card
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right font-bold font-mono">
-                    RM {Number(payment.amount).toFixed(2)}
-                    {payment.refundAmount && (
-                      <div className="text-[10px] text-purple-600 font-normal">
-                        −RM {Number(payment.refundAmount).toFixed(2)} refunded
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {STATUS_BADGE[payment.status] ?? (
-                      <Badge variant="outline">{payment.status}</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {(payment.status === "PAID" || payment.status === "PARTIALLY_REFUNDED") && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setRefundTarget(payment)
-                              setRefundAmountInput(
-                                Number(payment.amount).toFixed(2),
-                              )
-                            }}
-                          >
-                            Issue Refund
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="h-48 text-center">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page === 0}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            Previous
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            Page {page + 1} of {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page >= totalPages - 1}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Next
-          </Button>
+              ) : filteredPayments.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={8}
+                    className="h-48 text-center text-muted-foreground"
+                  >
+                    No transactions found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredPayments.map((payment) => (
+                  <TableRow key={payment.id}>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {payment.paymentDate
+                        ? format(parseISO(payment.paymentDate), "d MMM yyyy")
+                        : payment.createdAt
+                          ? format(parseISO(payment.createdAt), "d MMM yyyy")
+                          : "—"}
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {payment.confirmationRef}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-sm font-medium">
+                      {payment.customerName}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {payment.vehicleName}
+                    </TableCell>
+                    <TableCell>
+                      {payment.paymentType === "FPX" ? (
+                        <span className="flex items-center gap-1 text-xs font-medium">
+                          <Landmark className="h-3.5 w-3.5" /> FPX
+                        </span>
+                      ) : payment.paymentType === "CARD" ? (
+                        <span className="flex items-center gap-1 text-xs font-medium">
+                          <CreditCard className="h-3.5 w-3.5" /> Card
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="font-semibold text-primary font-mono">
+                        RM {Number(payment.amount).toFixed(2)}
+                      </span>
+                      {payment.refundAmount && (
+                        <div className="text-[10px] text-purple-600 font-normal">
+                          −RM {Number(payment.refundAmount).toFixed(2)} refunded
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {STATUS_BADGE[payment.status] ?? (
+                        <Badge variant="outline">{payment.status}</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {(payment.status === "PAID" ||
+                        payment.status === "PARTIALLY_REFUNDED") && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setRefundTarget(payment)
+                                setRefundAmountInput(
+                                  Number(payment.amount).toFixed(2),
+                                )
+                              }}
+                            >
+                              Issue Refund
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
-      )}
+
+        <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
+          <div>
+            {totalElements > 0
+              ? `Showing ${(currentPage - 1) * PAGE_SIZE + 1} to ${Math.min(currentPage * PAGE_SIZE, totalElements)} of ${totalElements} transactions`
+              : "No transactions"}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+            >
+              Previous
+            </Button>
+            <span className="px-2 font-medium text-foreground">
+              {currentPage} / {Math.max(totalPages, 1)}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages || totalPages === 0}
+              onClick={() => setCurrentPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      </div>
 
       {/* Refund Dialog */}
       <Dialog open={!!refundTarget} onOpenChange={() => setRefundTarget(null)}>
@@ -303,9 +372,7 @@ function AdminTransactions() {
               </div>
 
               <div>
-                <p className="text-xs font-semibold mb-1.5">
-                  Refund Amount (RM)
-                </p>
+                <p className="text-xs font-semibold mb-1.5">Refund Amount (RM)</p>
                 <Input
                   type="number"
                   step="0.01"

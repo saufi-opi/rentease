@@ -1,7 +1,7 @@
 import * as React from "react"
 import { format, isAfter } from "date-fns"
 import { CalendarIcon } from "lucide-react"
-import type { DateRange } from "react-day-picker"
+import type { DateRange, Modifiers } from "react-day-picker"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -16,6 +16,8 @@ interface DateRangePickerProps {
   /** Number of months to show side-by-side. Default 2 for wide, 1 for compact. */
   numberOfMonths?: 1 | 2
   align?: "start" | "center" | "end"
+  modifiers?: Partial<Modifiers>
+  modifiersClassNames?: Record<string, string>
 }
 
 export function DateRangePicker({
@@ -26,6 +28,8 @@ export function DateRangePicker({
   className,
   numberOfMonths = 2,
   align = "start",
+  modifiers,
+  modifiersClassNames,
 }: DateRangePickerProps) {
   const [open, setOpen] = React.useState(false)
   const today = new Date()
@@ -77,6 +81,8 @@ export function DateRangePicker({
           disabled={isDisabled}
           numberOfMonths={numberOfMonths}
           defaultMonth={from ?? today}
+          modifiers={modifiers}
+          modifiersClassNames={modifiersClassNames}
         />
       </PopoverContent>
     </Popover>

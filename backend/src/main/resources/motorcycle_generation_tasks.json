@@ -1,0 +1,30 @@
+{
+  "generation_config": {
+    "style": "Side profile facing left, professional studio lighting, pure solid white background, 8k resolution, cinematic quality",
+    "framing": "Wide shot, 25% zoomed out from subject, centered with generous whitespace",
+    "format": "PNG",
+    "target_dir": "uploads/seeds/images/"
+  },
+  "tasks": [
+    { "brand": "Yamaha", "model": "Y15ZR", "type": "Motorcycle", "filename": "yamaha_y15zr.png" },
+    { "brand": "Yamaha", "model": "MT-09", "type": "Motorcycle", "filename": "yamaha_mt09.png" },
+    { "brand": "Yamaha", "model": "NVX 155", "type": "Motorcycle", "filename": "yamaha_nvx155.png" },
+    { "brand": "Yamaha", "model": "R15", "type": "Motorcycle", "filename": "yamaha_r15.png" },
+    { "brand": "Yamaha", "model": "R25", "type": "Motorcycle", "filename": "yamaha_r25.png" },
+    { "brand": "Yamaha", "model": "NMAX", "type": "Motorcycle", "filename": "yamaha_nmax.png" },
+    { "brand": "Yamaha", "model": "XMAX", "type": "Motorcycle", "filename": "yamaha_xmax.png" },
+    { "brand": "Kawasaki", "model": "Ninja 250", "type": "Motorcycle", "filename": "kawasaki_ninja250.png" },
+    { "brand": "Kawasaki", "model": "Z900", "type": "Motorcycle", "filename": "kawasaki_z900.png" },
+    { "brand": "Kawasaki", "model": "Versys", "type": "Motorcycle", "filename": "kawasaki_versys.png" },
+    { "brand": "Kawasaki", "model": "Z250", "type": "Motorcycle", "filename": "kawasaki_z250.png" },
+    { "brand": "Kawasaki", "model": "Ninja 400", "type": "Motorcycle", "filename": "kawasaki_ninja400.png" },
+    { "brand": "Honda Motor", "model": "CBR150R", "type": "Motorcycle", "filename": "honda_motor_cbr150r.png" },
+    { "brand": "Honda Motor", "model": "RS150R", "type": "Motorcycle", "filename": "honda_motor_rs150r.png" },
+    { "brand": "Honda Motor", "model": "Wave 125i", "type": "Motorcycle", "filename": "honda_motor_wave125i.png" },
+    { "brand": "Honda Motor", "model": "ADV150", "type": "Motorcycle", "filename": "honda_motor_adv150.png" },
+    { "brand": "Honda Motor", "model": "CBR250RR", "type": "Motorcycle", "filename": "honda_motor_cbr250rr.png" },
+    { "brand": "Vespa", "model": "Primavera 150", "type": "Motorcycle", "filename": "vespa_primavera150.png" },
+    { "brand": "Vespa", "model": "Sprint 150", "type": "Motorcycle", "filename": "vespa_sprint150.png" },
+    { "brand": "Vespa", "model": "GTS 300", "type": "Motorcycle", "filename": "vespa_gts300.png" }
+  ]
+}

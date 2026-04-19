@@ -8,6 +8,8 @@ import com.rentease.backend.booking.model.BookingStatus;
 import com.rentease.backend.booking.repository.BookingRepository;
 import com.rentease.backend.common.exception.ConflictException;
 import com.rentease.backend.common.exception.ResourceNotFoundException;
+import com.rentease.backend.maintenance.model.MaintenanceStatus;
+import com.rentease.backend.maintenance.repository.MaintenanceRepository;
 import com.rentease.backend.payment.model.Payment;
 import com.rentease.backend.payment.model.PaymentStatus;
 import com.rentease.backend.payment.repository.PaymentRepository;
@@ -40,6 +42,7 @@ public class BookingService {
     private final UserRepository userRepository;
     private final PaymentRepository paymentRepository;
     private final PaymentService paymentService;
+    private final MaintenanceRepository maintenanceRepository;
 
     @Transactional
     public BookingResponse createBooking(BookingRequest request) {
@@ -65,6 +68,13 @@ public class BookingService {
                 List.of(BookingStatus.CANCELLED, BookingStatus.PAYMENT_FAILED));
         if (conflicts > 0) {
             throw new ConflictException("Vehicle is already booked for the selected dates");
+        }
+
+        long maintenanceConflicts = maintenanceRepository.countMaintenanceConflicts(
+                vehicle.getId(), request.getStartDate(), request.getEndDate(),
+                List.of(MaintenanceStatus.SCHEDULED, MaintenanceStatus.IN_PROGRESS));
+        if (maintenanceConflicts > 0) {
+            throw new ConflictException("Vehicle is scheduled for maintenance during the selected dates");
         }
 
         User customer = userRepository.findById(userId)
@@ -142,14 +152,34 @@ public class BookingService {
 
     // ── Admin ──────────────────────────────────────────────────────────────
 
-    public Page<BookingResponse> getAllBookings(String statusFilter, Pageable pageable) {
-        if (statusFilter != null && !statusFilter.isBlank()) {
+    public Page<BookingResponse> getAllBookings(String statusFilter, String vehicleIdFilter, Pageable pageable) {
+        UUID vehicleId = null;
+        if (vehicleIdFilter != null && !vehicleIdFilter.isBlank()) {
             try {
-                BookingStatus status = BookingStatus.valueOf(statusFilter.toUpperCase());
-                return bookingRepository.findByStatusOrderByCreatedAtDesc(status, pageable)
-                        .map(this::mapToResponse);
+                vehicleId = UUID.fromString(vehicleIdFilter);
             } catch (IllegalArgumentException ignored) {
             }
+        }
+
+        BookingStatus status = null;
+        if (statusFilter != null && !statusFilter.isBlank()) {
+            try {
+                status = BookingStatus.valueOf(statusFilter.toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+
+        if (vehicleId != null && status != null) {
+            return bookingRepository.findByVehicle_IdAndStatusOrderByCreatedAtDesc(vehicleId, status, pageable)
+                    .map(this::mapToResponse);
+        }
+        if (vehicleId != null) {
+            return bookingRepository.findByVehicle_IdOrderByCreatedAtDesc(vehicleId, pageable)
+                    .map(this::mapToResponse);
+        }
+        if (status != null) {
+            return bookingRepository.findByStatusOrderByCreatedAtDesc(status, pageable)
+                    .map(this::mapToResponse);
         }
         return bookingRepository.findAllByOrderByCreatedAtDesc(pageable).map(this::mapToResponse);
     }

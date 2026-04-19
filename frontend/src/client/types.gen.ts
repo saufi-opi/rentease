@@ -176,6 +176,7 @@ export type GetAllBookingsData = {
     page?: number;
     size?: number;
     status?: string;
+    vehicleId?: string;
 };
 
 export type GetAllBookingsResponse = (PageBookingResponse);
@@ -281,3 +282,74 @@ export type GetPopularVehiclesData = {
 };
 
 export type GetPopularVehiclesResponse = (Array<VehicleResponse>);
+
+export type MaintenanceRecord = {
+    id?: string;
+    vehicleId?: string;
+    vehicleBrand?: string;
+    vehicleModel?: string;
+    vehicleType?: string;
+    maintenanceType?: string;
+    description?: string;
+    scheduledStartDate?: string;
+    estimatedEndDate?: string;
+    status?: string;
+    createdById?: string;
+    createdByName?: string;
+    createdAt?: string;
+    completedAt?: string;
+};
+
+export type MaintenanceRequest = {
+    vehicleId: string;
+    maintenanceType: string;
+    description?: string;
+    scheduledStartDate: string;
+    estimatedEndDate: string;
+};
+
+export type MaintenanceStatusUpdateRequest = {
+    status: string;
+};
+
+export type PageMaintenanceRecord = {
+    totalElements?: number;
+    totalPages?: number;
+    first?: boolean;
+    last?: boolean;
+    size?: number;
+    content?: Array<MaintenanceRecord>;
+    number?: number;
+    sort?: SortObject;
+    numberOfElements?: number;
+    pageable?: PageableObject;
+    empty?: boolean;
+};
+
+export type CreateMaintenanceData = {
+    requestBody: MaintenanceRequest;
+};
+
+export type CreateMaintenanceResponse = MaintenanceRecord;
+
+export type GetAllMaintenanceData = {
+    page?: number;
+    size?: number;
+    status?: string;
+    vehicleId?: string;
+};
+
+export type GetAllMaintenanceResponse = PageMaintenanceRecord;
+
+export type GetMaintenanceByIdData = {
+    id: string;
+};
+
+export type GetMaintenanceByIdResponse = MaintenanceRecord;
+
+export type UpdateMaintenanceStatusData = {
+    id: string;
+    requestBody: MaintenanceStatusUpdateRequest;
+};
+
+export type UpdateMaintenanceStatusResponse = MaintenanceRecord;

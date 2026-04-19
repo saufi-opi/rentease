@@ -64,6 +64,7 @@ public class VehicleService {
         spec = spec.and(VehicleSpecification.searchByKeyword(search));
         spec = spec.and(VehicleSpecification.hasPriceRange(minPrice, maxPrice));
         spec = spec.and(VehicleSpecification.isAvailableForDates(availableFrom, availableTo));
+        spec = spec.and(VehicleSpecification.hasNoMaintenanceInWindow(availableFrom, availableTo));
 
         Page<Vehicle> vehiclePage = vehicleRepository.findAll(spec, pageable);
 

@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { LoginData, LoginResponse, UpdateBookingStatusData, UpdateBookingStatusResponse, GetMyBookingsResponse, CreateBookingData, CreateBookingResponse, GetBookingByIdData, GetBookingByIdResponse, CancelBookingData, CancelBookingResponse, GetAllBookingsData, GetAllBookingsResponse, UploadImageData, UploadImageResponse, RegisterData, RegisterResponse, GetCurrentUserResponse, DeleteProfileResponse, UpdateProfileData, UpdateProfileResponse, UpdateVehicleData, UpdateVehicleResponse, DeleteVehicleData, DeleteVehicleResponse, ListVehiclesData, ListVehiclesResponse, CreateVehicleData, CreateVehicleResponse, BrowseVehiclesData, BrowseVehiclesResponse, GetVehicleData, GetVehicleResponse, GetVehicleSuggestionsResponse, ToggleFavouriteData, ToggleFavouriteResponse, GetFavouritesResponse, GetFavouriteIdsResponse, GetPopularVehiclesData, GetPopularVehiclesResponse } from './types.gen';
+import type { LoginData, LoginResponse, UpdateBookingStatusData, UpdateBookingStatusResponse, GetMyBookingsResponse, CreateBookingData, CreateBookingResponse, GetBookingByIdData, GetBookingByIdResponse, CancelBookingData, CancelBookingResponse, GetAllBookingsData, GetAllBookingsResponse, UploadImageData, UploadImageResponse, RegisterData, RegisterResponse, GetCurrentUserResponse, DeleteProfileResponse, UpdateProfileData, UpdateProfileResponse, UpdateVehicleData, UpdateVehicleResponse, DeleteVehicleData, DeleteVehicleResponse, ListVehiclesData, ListVehiclesResponse, CreateVehicleData, CreateVehicleResponse, BrowseVehiclesData, BrowseVehiclesResponse, GetVehicleData, GetVehicleResponse, GetVehicleSuggestionsResponse, ToggleFavouriteData, ToggleFavouriteResponse, GetFavouritesResponse, GetFavouriteIdsResponse, GetPopularVehiclesData, GetPopularVehiclesResponse, CreateMaintenanceData, CreateMaintenanceResponse, GetAllMaintenanceData, GetAllMaintenanceResponse, GetMaintenanceByIdData, GetMaintenanceByIdResponse, UpdateMaintenanceStatusData, UpdateMaintenanceStatusResponse } from './types.gen';
 
 export class AuthControllerService {
     /**
@@ -115,7 +115,8 @@ export class BookingControllerService {
             query: {
                 page: data.page,
                 size: data.size,
-                status: data.status
+                status: data.status,
+                vehicleId: data.vehicleId
             }
         });
     }
@@ -385,6 +386,57 @@ export class FavouriteControllerService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/favourites/ids'
+        });
+    }
+}
+
+export class MaintenanceControllerService {
+    public static createMaintenance(data: CreateMaintenanceData): CancelablePromise<CreateMaintenanceResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/admin/maintenance',
+            body: data.requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    public static getAllMaintenance(data: GetAllMaintenanceData = {}): CancelablePromise<GetAllMaintenanceResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/admin/maintenance',
+            query: {
+                page: data.page,
+                size: data.size,
+                status: data.status,
+                vehicleId: data.vehicleId,
+            },
+        });
+    }
+
+    public static getVehicleMaintenance(data: { vehicleId: string; page?: number; size?: number }): CancelablePromise<GetAllMaintenanceResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/vehicles/{vehicleId}/maintenance',
+            path: { vehicleId: data.vehicleId },
+            query: { page: data.page, size: data.size },
+        });
+    }
+
+    public static getMaintenanceById(data: GetMaintenanceByIdData): CancelablePromise<GetMaintenanceByIdResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/admin/maintenance/{id}',
+            path: { id: data.id },
+        });
+    }
+
+    public static updateMaintenanceStatus(data: UpdateMaintenanceStatusData): CancelablePromise<UpdateMaintenanceStatusResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/admin/maintenance/{id}/status',
+            path: { id: data.id },
+            body: data.requestBody,
+            mediaType: 'application/json',
         });
     }
 }

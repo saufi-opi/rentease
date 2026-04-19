@@ -49,9 +49,10 @@ public class BookingController {
     public Page<BookingResponse> getAllBookings(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String status
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String vehicleId
     ) {
-        return bookingService.getAllBookings(status, PageRequest.of(page, size));
+        return bookingService.getAllBookings(status, vehicleId, PageRequest.of(page, size));
     }
 
     @PutMapping("/api/v1/admin/bookings/{id}/status")

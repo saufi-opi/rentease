@@ -93,6 +93,25 @@ public class DataInitializer implements CommandLineRunner {
 
         // Mercedes-Benz
         seedVehicle("Car", "Mercedes-Benz", "C-Class", 2023, 480, 5, "Petrol", "mercedes_cclass.png");
+
+        // Yamaha
+        seedVehicle("Bike", "Yamaha", "Y15ZR", 2023, 60, 2, "Petrol", "yamaha_y15zr.png");
+        seedVehicle("Bike", "Yamaha", "MT-09", 2023, 250, 2, "Petrol", "yamaha_mt09.png");
+        seedVehicle("Bike", "Yamaha", "NVX 155", 2023, 80, 2, "Petrol", "yamaha_nvx155.png");
+        seedVehicle("Bike", "Yamaha", "R15", 2023, 100, 2, "Petrol", "yamaha_r15.png");
+        seedVehicle("Bike", "Yamaha", "R25", 2023, 150, 2, "Petrol", "yamaha_r25.png");
+        seedVehicle("Bike", "Yamaha", "NMAX", 2023, 90, 2, "Petrol", "yamaha_nmax.png");
+        seedVehicle("Bike", "Yamaha", "XMAX", 2023, 180, 2, "Petrol", "yamaha_xmax.png");
+
+        // Kawasaki
+        seedVehicle("Bike", "Kawasaki", "Ninja 250", 2023, 160, 2, "Petrol", "kawasaki_ninja250.png");
+        seedVehicle("Bike", "Kawasaki", "Z900", 2023, 300, 2, "Petrol", "kawasaki_z900.png");
+        seedVehicle("Bike", "Kawasaki", "Versys", 2023, 280, 2, "Petrol", "kawasaki_versys.png");
+        seedVehicle("Bike", "Kawasaki", "Z250", 2023, 150, 2, "Petrol", "kawasaki_z250.png");
+        seedVehicle("Bike", "Kawasaki", "Ninja 400", 2023, 200, 2, "Petrol", "kawasaki_ninja400.png");
+
+        // Honda Motor
+        seedVehicle("Bike", "Honda Motor", "CBR150R", 2023, 120, 2, "Petrol", "honda_motor_cbr150r.png");
     }
 
     private void seedVehicle(String type, String brand, String model, int year, double rate, int seats, String fuel, String imageUrl) {
