@@ -44,6 +44,7 @@ const useAuth = () => {
   const isAdmin = user?.role === "ADMIN"
   const isManagement = user?.role === "TOP_MANAGEMENT"
   const isUser = user?.role === "CUSTOMER"
+  const isMaintenance = user?.role === "MAINTENANCE"
 
   const signUpMutation = useMutation({
     mutationFn: (data: UserRegistrationRequest) =>
@@ -79,6 +80,7 @@ const useAuth = () => {
     isAdmin,
     isManagement,
     isUser,
+    isMaintenance,
   }
 }
 

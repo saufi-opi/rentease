@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -21,6 +22,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    private static final Set<Role> SELF_REGISTRATION_ROLES = Set.of(Role.CUSTOMER, Role.MAINTENANCE);
+
     @Transactional
     public User registerUser(User user) {
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
@@ -28,7 +31,9 @@ public class UserService {
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setStatus(UserStatus.ACTIVE);
-        user.setRole(Role.CUSTOMER);
+        if (user.getRole() == null || !SELF_REGISTRATION_ROLES.contains(user.getRole())) {
+            user.setRole(Role.CUSTOMER);
+        }
         return userRepository.save(user);
     }
 

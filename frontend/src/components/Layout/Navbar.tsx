@@ -20,6 +20,17 @@ const ADMIN_ROUTES = [
   }
 ]
 
+const MAINTENANCE_ROUTES = [
+  {
+    to: "/",
+    label: "Home",
+  },
+  {
+    to: "/admin/maintenance",
+    label: "Maintenance",
+  },
+]
+
 const CUSTOMER_ROUTES = [
   {
     to: "/",
@@ -40,9 +51,9 @@ const CUSTOMER_ROUTES = [
 ]
 
 export function Navbar() {
-  const { isAdmin } = useAuth()
+  const { isAdmin, isMaintenance } = useAuth()
 
-  const routes = isAdmin ? ADMIN_ROUTES : CUSTOMER_ROUTES
+  const routes = isAdmin ? ADMIN_ROUTES : isMaintenance ? MAINTENANCE_ROUTES : CUSTOMER_ROUTES
 
   return (
     <nav className="hidden md:flex items-center gap-8 text-sm font-medium">

@@ -5,9 +5,8 @@ import useAuth from "@/hooks/useAuth"
 import type { NavItemConfig } from "./NavItem"
 import { NavSection } from "./NavSection"
 export function AdminSidebar() {
-  const { isAdmin, isManagement } = useAuth()
+  const { isAdmin, isManagement, isMaintenance } = useAuth()
 
-  // 1. Admin Menu
   const adminItems: NavItemConfig[] = [
     {
       icon: LayoutDashboard,
@@ -20,6 +19,10 @@ export function AdminSidebar() {
     { icon: Receipt, title: "Transactions", path: "/admin/transactions" },
   ]
 
+  const maintenanceOnlyItems: NavItemConfig[] = [
+    { icon: Wrench, title: "Maintenance", path: "/admin/maintenance" },
+  ]
+
   return (
     <Sidebar
       collapsible="icon"
@@ -27,10 +30,14 @@ export function AdminSidebar() {
       className="bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60"
     >
       <SidebarContent className="overflow-x-hidden px-2">
-        {/* Management & Admin Menu */}
         {(isAdmin || isManagement) && (
           <div className="mt-2 text-sm">
             <NavSection label="System Management" items={adminItems} />
+          </div>
+        )}
+        {isMaintenance && (
+          <div className="mt-2 text-sm">
+            <NavSection label="Maintenance" items={maintenanceOnlyItems} />
           </div>
         )}
       </SidebarContent>

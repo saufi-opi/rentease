@@ -115,11 +115,15 @@ function formatDate(dateStr?: string) {
   })
 }
 
+type PendingUpdate = { id: string; nextStatus: string; label: string }
+
 function AdminMaintenance() {
   const queryClient = useQueryClient()
   const [currentPage, setCurrentPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState("ALL")
   const [createOpen, setCreateOpen] = useState(false)
+  const [pendingUpdate, setPendingUpdate] = useState<PendingUpdate | null>(null)
+  const [remark, setRemark] = useState("")
 
   const PAGE_SIZE = 10
 
@@ -134,10 +138,10 @@ function AdminMaintenance() {
   })
 
   const { mutate: updateStatus, isPending: updating } = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
+    mutationFn: ({ id, status, remark }: { id: string; status: string; remark?: string }) =>
       MaintenanceControllerService.updateMaintenanceStatus({
         id,
-        requestBody: { status },
+        requestBody: { status, remark: remark || undefined },
       }),
     onSuccess: (_, vars) => {
       toast.success("Success", {
@@ -153,6 +157,13 @@ function AdminMaintenance() {
       })
     },
   })
+
+  const handleConfirmUpdate = () => {
+    if (!pendingUpdate) return
+    updateStatus({ id: pendingUpdate.id, status: pendingUpdate.nextStatus, remark })
+    setPendingUpdate(null)
+    setRemark("")
+  }
 
   const records = data?.content ?? []
   const totalPages = data?.totalPages ?? 1
@@ -209,20 +220,21 @@ function AdminMaintenance() {
                 <TableHead>Scheduled</TableHead>
                 <TableHead>Est. End</TableHead>
                 <TableHead>Completed</TableHead>
+                <TableHead>Remark</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-48 text-center">
+                  <TableCell colSpan={9} className="h-48 text-center">
                     <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
                   </TableCell>
                 </TableRow>
               ) : records.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={8}
+                    colSpan={9}
                     className="h-48 text-center text-muted-foreground"
                   >
                     No maintenance records found.
@@ -263,12 +275,22 @@ function AdminMaintenance() {
                     <TableCell className="text-sm text-muted-foreground">
                       {formatDate(record.completedAt)}
                     </TableCell>
+                    <TableCell className="max-w-[180px]">
+                      <span className="text-sm text-muted-foreground line-clamp-2">
+                        {record.remark || "—"}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-right">
                       <MaintenanceActions
                         record={record}
-                        onUpdate={(next) =>
-                          record.id && updateStatus({ id: record.id, status: next })
-                        }
+                        onUpdate={(next, label) => {
+                          if (!record.id) return
+                          if (next === "COMPLETED") {
+                            setPendingUpdate({ id: record.id, nextStatus: next, label })
+                          } else {
+                            updateStatus({ id: record.id, status: next })
+                          }
+                        }}
                         disabled={updating}
                       />
                     </TableCell>
@@ -318,6 +340,52 @@ function AdminMaintenance() {
           queryClient.invalidateQueries({ queryKey: ["vehicles"] })
         }}
       />
+
+      <Dialog
+        open={!!pendingUpdate}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingUpdate(null)
+            setRemark("")
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{pendingUpdate?.label}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Label htmlFor="remark-input">
+              Remark{" "}
+              <span className="text-muted-foreground font-normal">(optional)</span>
+            </Label>
+            <Textarea
+              id="remark-input"
+              placeholder="Describe the work done or reason for this status change..."
+              value={remark}
+              onChange={(e) => setRemark(e.target.value)}
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPendingUpdate(null)
+                setRemark("")
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmUpdate} disabled={updating}>
+              {updating ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -328,7 +396,7 @@ function MaintenanceActions({
   disabled,
 }: {
   record: MaintenanceRecord
-  onUpdate: (next: string) => void
+  onUpdate: (next: string, label: string) => void
   disabled: boolean
 }) {
   const transitions = TRANSITIONS[record.status!] ?? []
@@ -351,7 +419,7 @@ function MaintenanceActions({
         {transitions.map((t) => (
           <DropdownMenuItem
             key={t.next}
-            onClick={() => onUpdate(t.next)}
+            onClick={() => onUpdate(t.next, t.label)}
             className={
               t.destructive ? "text-destructive focus:text-destructive" : ""
             }
@@ -376,7 +444,7 @@ function VehiclePicker({
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-vehicles-picker"],
-    queryFn: () => VehicleControllerService.listVehicles({ size: 200 }),
+    queryFn: () => VehicleControllerService.browseVehicles({ size: 200 }),
     staleTime: 30_000,
   })
 

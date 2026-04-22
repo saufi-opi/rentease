@@ -22,4 +22,6 @@ public class UserRegistrationRequest {
 
     @JsonProperty("phone_number")
     private String phoneNumber;
+
+    private String role;
 }

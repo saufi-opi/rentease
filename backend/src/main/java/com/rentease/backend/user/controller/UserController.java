@@ -2,6 +2,7 @@ package com.rentease.backend.user.controller;
 
 import com.rentease.backend.auth.security.SecurityUtils;
 import com.rentease.backend.common.exception.ResourceNotFoundException;
+import com.rentease.backend.user.model.Role;
 import com.rentease.backend.user.model.User;
 import com.rentease.backend.user.service.UserService;
 import jakarta.validation.Valid;
@@ -20,14 +21,19 @@ public class UserController {
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)
     public UserResponse register(@Valid @RequestBody UserRegistrationRequest request) {
-        User user = User.builder()
+        User.UserBuilder builder = User.builder()
                 .email(request.getEmail())
                 .password(request.getPassword())
                 .fullName(request.getFullName())
-                .phoneNumber(request.getPhoneNumber())
-                .build();
+                .phoneNumber(request.getPhoneNumber());
 
-        User savedUser = userService.registerUser(user);
+        if (request.getRole() != null) {
+            try {
+                builder.role(Role.valueOf(request.getRole()));
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        User savedUser = userService.registerUser(builder.build());
         return mapToResponse(savedUser);
     }
 

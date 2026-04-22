@@ -122,7 +122,7 @@ public class MaintenanceService {
     }
 
     @Transactional
-    public MaintenanceResponse updateStatus(UUID id, String newStatusStr) {
+    public MaintenanceResponse updateStatus(UUID id, String newStatusStr, String remark) {
         MaintenanceRecord record = maintenanceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Maintenance record not found"));
 
@@ -153,6 +153,9 @@ public class MaintenanceService {
         }
 
         record.setStatus(newStatus);
+        if (remark != null && !remark.isBlank()) {
+            record.setRemark(remark);
+        }
         return mapToResponse(maintenanceRepository.save(record));
     }
 
@@ -175,6 +178,7 @@ public class MaintenanceService {
                 .createdByName(createdBy != null ? createdBy.getFullName() : null)
                 .createdAt(record.getCreatedAt())
                 .completedAt(record.getCompletedAt())
+                .remark(record.getRemark())
                 .build();
     }
 }

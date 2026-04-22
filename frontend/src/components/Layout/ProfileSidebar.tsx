@@ -7,7 +7,7 @@ import useAuth from "@/hooks/useAuth"
 import { getInitials } from "@/utils"
 
 export function ProfileSidebar() {
-  const { user, logout, isAdmin, isManagement } = useAuth()
+  const { user, logout, isAdmin, isManagement, isMaintenance } = useAuth()
   const location = useLocation()
 
   let navLinks = [
@@ -16,7 +16,7 @@ export function ProfileSidebar() {
     { name: "My Bookings", path: "/bookings", icon: Car },
   ]
 
-  if (isAdmin || isManagement) {
+  if (isAdmin || isManagement || isMaintenance) {
     navLinks = navLinks.filter((link) => link.name === "My Account")
   }
 

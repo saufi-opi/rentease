@@ -19,12 +19,22 @@ import {
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 
 const formSchema = z
   .object({
     email: z.string().email({ message: "Invalid email address" }),
     full_name: z.string().min(1, { message: "Full Name is required" }),
+    role: z.enum(["CUSTOMER", "MAINTENANCE"], {
+      required_error: "Please select a role",
+    }),
     phone_number: z.string().min(1, { message: "Phone number is required" }),
     password: z
       .string()
@@ -67,6 +77,7 @@ function SignUp() {
     defaultValues: {
       email: "",
       full_name: "",
+      role: "CUSTOMER" as const,
       phone_number: "",
       password: "",
       confirm_password: "",
@@ -157,6 +168,28 @@ function SignUp() {
                         className="h-11 border-border focus:border-primary focus:ring-primary/20"
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="h-11 border-border focus:border-primary focus:ring-primary/20">
+                          <SelectValue placeholder="Select your role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="CUSTOMER">Customer</SelectItem>
+                        <SelectItem value="MAINTENANCE">Maintenance Staff</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

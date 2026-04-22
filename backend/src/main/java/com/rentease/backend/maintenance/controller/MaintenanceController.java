@@ -19,13 +19,13 @@ public class MaintenanceController {
 
     @PostMapping("/api/v1/admin/maintenance")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MAINTENANCE')")
     public MaintenanceResponse createMaintenance(@Valid @RequestBody MaintenanceRequest request) {
         return maintenanceService.createMaintenance(request);
     }
 
     @GetMapping("/api/v1/admin/maintenance")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MAINTENANCE')")
     public Page<MaintenanceResponse> getAllMaintenance(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -36,7 +36,7 @@ public class MaintenanceController {
     }
 
     @GetMapping("/api/v1/admin/maintenance/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MAINTENANCE')")
     public MaintenanceResponse getMaintenanceById(@PathVariable UUID id) {
         return maintenanceService.getMaintenanceById(id);
     }
@@ -51,11 +51,11 @@ public class MaintenanceController {
     }
 
     @PutMapping("/api/v1/admin/maintenance/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MAINTENANCE')")
     public MaintenanceResponse updateMaintenanceStatus(
             @PathVariable UUID id,
             @Valid @RequestBody MaintenanceStatusUpdateRequest request
     ) {
-        return maintenanceService.updateStatus(id, request.getStatus());
+        return maintenanceService.updateStatus(id, request.getStatus(), request.getRemark());
     }
 }

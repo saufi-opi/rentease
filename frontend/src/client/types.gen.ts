@@ -81,6 +81,7 @@ export type UserRegistrationRequest = {
     password: string;
     full_name: string;
     phone_number?: string;
+    role?: string;
 };
 
 export type UserResponse = {
@@ -298,6 +299,7 @@ export type MaintenanceRecord = {
     createdByName?: string;
     createdAt?: string;
     completedAt?: string;
+    remark?: string | null;
 };
 
 export type MaintenanceRequest = {
@@ -310,6 +312,7 @@ export type MaintenanceRequest = {
 
 export type MaintenanceStatusUpdateRequest = {
     status: string;
+    remark?: string | null;
 };
 
 export type PageMaintenanceRecord = {

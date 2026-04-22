@@ -23,7 +23,7 @@ import useAuth from "@/hooks/useAuth"
 import { getInitials } from "@/utils"
 
 export function AppHeader() {
-  const { user, logout, isAdmin, isManagement } = useAuth()
+  const { user, logout, isAdmin, isManagement, isMaintenance } = useAuth()
   const location = useLocation()
 
   // Show sidebar trigger if we are in admin routes
@@ -98,6 +98,17 @@ export function AppHeader() {
                       <DropdownMenuItem className="cursor-pointer">
                         <LayoutDashboard className="mr-2 h-4 w-4" />
                         <span>System Management</span>
+                      </DropdownMenuItem>
+                    </Link>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                {isMaintenance && (
+                  <>
+                    <Link to="/admin/maintenance">
+                      <DropdownMenuItem className="cursor-pointer">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        <span>Maintenance</span>
                       </DropdownMenuItem>
                     </Link>
                     <DropdownMenuSeparator />

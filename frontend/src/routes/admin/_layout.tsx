@@ -23,24 +23,34 @@ export const Route = createFileRoute("/admin/_layout")({
       })
     }
 
+    let currentUser
     try {
-      const currentUser = await queryClient.ensureQueryData({
+      currentUser = await queryClient.ensureQueryData({
         queryKey: ["currentUser"],
         queryFn: () => UserControllerService.getCurrentUser(),
       })
-      const hasAccess =
-        currentUser?.role === "ADMIN" || currentUser?.role === "TOP_MANAGEMENT"
-      if (!hasAccess) {
-        throw notFound()
-      }
-    } catch (_error) {
-      // If fetching fails (e.g. token expired)
+    } catch {
       throw redirect({
         to: "/login",
         search: {
           next: location.pathname,
         },
       })
+    }
+
+    const hasAccess =
+      currentUser?.role === "ADMIN" ||
+      currentUser?.role === "TOP_MANAGEMENT" ||
+      currentUser?.role === "MAINTENANCE"
+    if (!hasAccess) {
+      throw notFound()
+    }
+
+    if (
+      currentUser?.role === "MAINTENANCE" &&
+      !location.pathname.startsWith("/admin/maintenance")
+    ) {
+      throw redirect({ to: "/admin/maintenance" })
     }
   },
 })

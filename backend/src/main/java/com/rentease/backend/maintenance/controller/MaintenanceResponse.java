@@ -25,4 +25,5 @@ public class MaintenanceResponse {
     private String createdByName;
     private LocalDateTime createdAt;
     private LocalDateTime completedAt;
+    private String remark;
 }

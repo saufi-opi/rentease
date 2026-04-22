@@ -51,6 +51,9 @@ public class MaintenanceRecord {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    @Column(columnDefinition = "TEXT")
+    private String remark;
+
     @PrePersist
     protected void onCreate() {
         if (id == null) id = UUID.randomUUID();
