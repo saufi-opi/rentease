@@ -24,7 +24,7 @@ async function fetchRevenue(): Promise<{ monthlyRevenue: number; totalRevenue: n
 export const Route = createFileRoute("/admin/_layout/dashboard")({
   component: AdminDashboard,
   head: () => ({
-    meta: [{ title: "Admin Dashboard - RentEase" }],
+    meta: [{ title: "Dashboard" }],
   }),
 })
 
@@ -73,7 +73,7 @@ function AdminDashboard() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
           <LayoutDashboard className="h-8 w-8 text-primary" />
-          Admin Overview
+          Dashboard Overview
         </h1>
       </div>
 

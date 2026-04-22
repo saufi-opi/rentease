@@ -51,10 +51,10 @@ export function AppHeader() {
           >
             <Logo iconSize="h-6" fontSize="text-xl" />
           </Link>
-        </div>
-
         {/* Main Navigation */}
         {!adminRoutes && <Navbar />}
+        </div>
+
 
         <div className="flex items-center gap-4">
           {user ? (
@@ -97,7 +97,7 @@ export function AppHeader() {
                     <Link to="/admin">
                       <DropdownMenuItem className="cursor-pointer">
                         <LayoutDashboard className="mr-2 h-4 w-4" />
-                        <span>Admin Dashboard</span>
+                        <span>System Management</span>
                       </DropdownMenuItem>
                     </Link>
                     <DropdownMenuSeparator />

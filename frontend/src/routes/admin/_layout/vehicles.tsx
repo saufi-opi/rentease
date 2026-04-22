@@ -58,7 +58,7 @@ import getCroppedImg from "@/utils/cropImage"
 export const Route = createFileRoute("/admin/_layout/vehicles")({
   component: AdminVehicles,
   head: () => ({
-    meta: [{ title: "Vehicle Management - Admin" }],
+    meta: [{ title: "Vehicle Management" }],
   }),
 })
 

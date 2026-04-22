@@ -32,7 +32,7 @@ import {
 export const Route = createFileRoute("/admin/_layout/bookings")({
   component: AdminBookings,
   head: () => ({
-    meta: [{ title: "Booking Management - Admin" }],
+    meta: [{ title: "Booking Management" }],
   }),
 })
 

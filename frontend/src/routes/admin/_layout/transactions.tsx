@@ -78,7 +78,7 @@ async function fetchPayments(page: number, size: number, status?: string) {
 export const Route = createFileRoute("/admin/_layout/transactions")({
   component: AdminTransactions,
   head: () => ({
-    meta: [{ title: "Transactions - Admin" }],
+    meta: [{ title: "Transactions" }],
   }),
 })
 

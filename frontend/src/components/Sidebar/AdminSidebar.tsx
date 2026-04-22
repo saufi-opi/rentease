@@ -11,7 +11,7 @@ export function AdminSidebar() {
   const adminItems: NavItemConfig[] = [
     {
       icon: LayoutDashboard,
-      title: "Admin Dashboard",
+      title: "Dashboard",
       path: "/admin/dashboard",
     },
     { icon: Car, title: "Vehicles", path: "/admin/vehicles" },
@@ -30,7 +30,7 @@ export function AdminSidebar() {
         {/* Management & Admin Menu */}
         {(isAdmin || isManagement) && (
           <div className="mt-2 text-sm">
-            <NavSection label="Admin & Management" items={adminItems} />
+            <NavSection label="System Management" items={adminItems} />
           </div>
         )}
       </SidebarContent>

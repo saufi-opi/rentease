@@ -54,7 +54,7 @@ import { Textarea } from "@/components/ui/textarea"
 export const Route = createFileRoute("/admin/_layout/maintenance")({
   component: AdminMaintenance,
   head: () => ({
-    meta: [{ title: "Maintenance Management - Admin" }],
+    meta: [{ title: "Maintenance Management" }],
   }),
 })
 
@@ -432,7 +432,7 @@ function VehiclePicker({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="p-0 w-[var(--radix-popover-trigger-width)]"
+        className="p-0 w-(--radix-popover-trigger-width)"
         align="start"
         sideOffset={4}
       >
