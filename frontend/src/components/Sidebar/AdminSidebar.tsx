@@ -1,4 +1,4 @@
-import { BarChart2, Car, ClipboardList, LayoutDashboard, Receipt, Wrench } from "lucide-react"
+import { BarChart2, Car, ClipboardList, LayoutDashboard, Receipt, Users, Wrench } from "lucide-react"
 
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar"
 import useAuth from "@/hooks/useAuth"
@@ -13,6 +13,7 @@ export function AdminSidebar() {
       title: "Dashboard",
       path: "/admin/dashboard",
     },
+    { icon: Users, title: "Users", path: "/admin/users" },
     { icon: Car, title: "Vehicles", path: "/admin/vehicles" },
     { icon: Wrench, title: "Maintenance", path: "/admin/maintenance" },
     { icon: ClipboardList, title: "All Bookings", path: "/admin/bookings" },
