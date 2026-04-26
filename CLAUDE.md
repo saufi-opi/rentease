@@ -61,21 +61,36 @@ docker compose up -d
 Located at `backend/src/main/java/com/rentease/backend/`:
 
 - `auth/` — JWT authentication: `AuthController` (login), `JwtTokenProvider`, `JwtAuthenticationFilter`, `SecurityConfig`
-- `user/` — User management: CRUD, role-based access (`ADMIN`, `TOP_MANAGEMENT`, regular users)
-- `vehicle/` — Vehicle CRUD with pagination/filtering via `VehicleSpecification` (JPA Criteria). Supports filtering by type, brand, keyword, price range, and date-range availability (subquery excludes vehicles with overlapping non-cancelled bookings). Key enums: `AvailabilityStatus` (`AVAILABLE`, `RENTED`, `MAINTENANCE`), `TransmissionType`, `VehicleFeature`. The `discount` field is a percentage (DECIMAL 5,2); booking cost = `rental_rate * (1 - discount/100) * days` (calculated client-side).
+- `user/` — User management: CRUD, role-based access. Role enum: `CUSTOMER`, `ADMIN`, `TOP_MANAGEMENT`, `MAINTENANCE`.
+- `vehicle/` — Vehicle CRUD with pagination/filtering via `VehicleSpecification` (JPA Criteria). Supports filtering by type, brand, keyword, price range, and date-range availability (subquery excludes vehicles with overlapping non-cancelled bookings). Key enums: `AvailabilityStatus` (`AVAILABLE`, `RENTED`, `UNDER_MAINTENANCE`), `TransmissionType`, `VehicleFeature`. The `discount` field is a percentage (DECIMAL 5,2); booking cost = `rental_rate * (1 - discount/100) * days` (calculated client-side).
 - `booking/` — Booking lifecycle (see state machine below). Bookings include a `confirmationRef` UUID prefixed `RB-`. Customers can cancel their own bookings; admins see all with pagination and status filter. `BookingExpirationJob` (scheduled every hour) auto-cancels PENDING bookings with no payment after 30 minutes and voids the Stripe PaymentIntent.
 - `payment/` — Stripe payment integration (see Payment Flow below).
-- `favourite/` — User favourites: `Favourite` entity (`user_favourites` table, V13 migration), `FavouriteController` endpoints: `POST /api/v1/favourites/{vehicleId}` (toggle add/remove), `GET /api/v1/favourites` (list as `VehicleResponse`), `GET /api/v1/favourites/ids` (UUID list for client-side heart state). All require authentication.
+- `favourite/` — User favourites: `Favourite` entity (`user_favourites` table, V13 migration). Endpoints: `POST /api/v1/favourites/{vehicleId}` (toggle), `GET /api/v1/favourites`, `GET /api/v1/favourites/ids`. All require authentication.
+- `maintenance/` — Maintenance record CRUD. See Maintenance Module section below.
 - `common/` — Cross-cutting: `GlobalExceptionHandler`, `FileStorageService` (local `uploads/` dir), `DataInitializer` (seeds default admin on startup), `WebMvcConfig` (CORS, static file serving)
 
 **API base path**: `/api/v1/`
 
-**Security rules** (from `SecurityConfig`):
-- Public: `POST /api/v1/users/signup`, `POST /api/v1/auth/login`, `GET /api/v1/vehicles/**` (includes `/popular`), `GET /uploads/**`, Swagger UI
-- Admin-only: `/api/v1/admin/**`
+**Security rules** (from `SecurityConfig`, evaluated top-to-bottom):
+- Public: `POST /api/v1/users/signup`, `POST /api/v1/auth/login`, `GET /api/v1/vehicles/**`, `GET /uploads/**`, Swagger UI, Stripe webhook
+- `/api/v1/admin/maintenance/**` — requires `ADMIN` or `MAINTENANCE` role (more specific rule placed before the general admin rule)
+- `/api/v1/admin/**` — requires `ADMIN` role only
 - Everything else requires authentication
 
-**Database migrations** are in `backend/src/main/resources/db/migration/` (Flyway). Schema order: users → vehicles → bookings → payments → maintenance → feedback/reports → user_favourites (V13). JPA is set to `ddl-auto=validate` — all schema changes must go through Flyway migrations.
+**Database migrations** are in `backend/src/main/resources/db/migration/` (Flyway). Latest: V15 adds `remark` column to `maintenance_records`. JPA is set to `ddl-auto=validate` — all schema changes must go through Flyway migrations.
+
+### Role System
+
+Four roles in `Role.java`:
+
+| Role | Access |
+|------|--------|
+| `CUSTOMER` | Public + authenticated user routes (`/profile`, `/bookings`, `/favourites`) |
+| `ADMIN` | All admin routes (`/api/v1/admin/**`), full sidebar |
+| `TOP_MANAGEMENT` | Same frontend access as ADMIN |
+| `MAINTENANCE` | `/api/v1/admin/maintenance/**` only; frontend redirected to `/admin/maintenance` |
+
+**Self-registration** at `/api/v1/users/signup` accepts `CUSTOMER` or `MAINTENANCE` as the `role` field. Any other value (or omitted) defaults to `CUSTOMER`. `ADMIN` and `TOP_MANAGEMENT` cannot be self-registered.
 
 ### Booking Status State Machine
 
@@ -94,64 +109,56 @@ Located at `backend/src/main/java/com/rentease/backend/`:
 
 `Payment.status` enum: `PENDING`, `PAID`, `FAILED`, `REFUNDED`. Revenue endpoint (`GET /api/v1/admin/payments/revenue`) returns monthly + total paid amounts.
 
+### Maintenance Module
+
+`MaintenanceRecord` entity (table: `maintenance_records`): linked to a vehicle and a `createdBy` user. Fields include `maintenanceType`, `description`, `scheduledStartDate`, `estimatedEndDate`, `status`, `completedAt`, and `remark` (TEXT, nullable — set by the person completing the record).
+
+Status transitions (`MaintenanceStatus`): `SCHEDULED` → `IN_PROGRESS` or `CANCELLED`; `IN_PROGRESS` → `COMPLETED` or `CANCELLED`. When IN_PROGRESS, vehicle is set to `UNDER_MAINTENANCE`; on COMPLETED or CANCELLED it reverts to `AVAILABLE`.
+
+Controller endpoints at `/api/v1/admin/maintenance/**` — accessible by both `ADMIN` and `MAINTENANCE` roles. The public vehicle maintenance history endpoint is at `GET /api/v1/vehicles/{vehicleId}/maintenance` (no auth).
+
 ### Frontend Structure
 
 Located at `frontend/src/`:
 
-- `client/` — API client generated from OpenAPI spec via `@hey-api/openapi-ts`. Regenerate with `npm run generate-client` (backend must be running). When adding new backend endpoints before regenerating, you can manually extend `sdk.gen.ts` (add service method) and `types.gen.ts` (add data/response types) — but note that the next `generate-client` run will overwrite these additions, so they must match what the backend actually exposes.
+- `client/` — API client generated from OpenAPI spec via `@hey-api/openapi-ts`. Regenerate with `npm run generate-client` (backend must be running). When manually extending `sdk.gen.ts`/`types.gen.ts` before regenerating, the additions must match what the backend actually exposes or they'll be overwritten. **Important**: use `browseVehicles()` (hits public `GET /api/v1/vehicles`) not `listVehicles()` (hits `GET /api/v1/admin/vehicles`) anywhere a non-ADMIN role needs to fetch vehicles.
 - `routes/` — TanStack Router file-based routing:
-  - `index.tsx` — public landing page with marketing sections (hero, popular cars, testimonials, FAQ, etc.)
-  - `login.tsx`, `signup.tsx` — public pages
+  - `index.tsx` — public landing page
+  - `login.tsx`, `signup.tsx` — public pages. Signup includes role selector (Customer / Maintenance Staff).
   - `_layout.tsx` — authenticated user layout (header + profile sidebar). Guards with `isLoggedIn()`.
-  - `_layout/` — user-facing pages: `bookings.tsx`, `favourites.tsx`, `profile.tsx`
-  - `vehicles/$id.tsx` — layout wrapper (just renders `<Outlet />`) required by TanStack Router for nested routes under a dynamic segment
-  - `vehicles/` — public vehicle listing (`index.tsx`), detail (`$id/index.tsx`), and booking form (`$id/book.tsx`). The booking form is a **4-step flow**: date selection → T&C review (checkbox confirmation, edit/cancel/confirm buttons) → Stripe payment (`PaymentForm.tsx`) → receipt (`DigitalReceipt.tsx`). The booking and payment intent are only created after the user confirms T&C. Accepts `?pickup=` and `?return=` search params; calculates cost client-side using `rental_rate` and `discount`.
-  - `admin/_layout.tsx` — admin layout (sidebar + header). Guards: authenticated + role `ADMIN` or `TOP_MANAGEMENT`.
-  - `admin/_layout/` — admin pages: `dashboard.tsx` (revenue card; other stats stubbed), `vehicles.tsx`, `bookings.tsx` (status transitions via dropdown), `transactions.tsx` (payment list), `maintenance.tsx` (maintenance record CRUD)
-- `components/` — UI components using shadcn/ui (Radix UI primitives + Tailwind). Notable custom pickers: `date-picker.tsx` (single date, closes on select) and `date-range-picker.tsx` (range, kept for potential reuse). Both disable past dates and accept an optional `disabled` callback for additional constraints.
-- `hooks/` — custom hooks:
-  - `useAuth` — current user auth state
-  - `useDataTableHandlers` — pagination/sorting/search synced to URL query params. Sort format is `field:asc|desc` in URL, mapped to `±field` for API (`apiSort`). `skipSearchSync` option (default `true`) keeps search local without polluting the URL. Used by all admin data tables.
-  - `useDebounce` — 500ms default, used in search inputs
-  - `useCustomToast` — wrapper around sonner with `.success()` / `.error()` helpers
-  - `useCopyToClipboard` — copies text to clipboard, returns `[copiedText, copy]`
-  - `useMobile` — returns boolean for mobile viewport breakpoint detection
-- `lib/` — utilities:
-  - `react-query.ts` — exports `queryClient` used for prefetching in route `beforeLoad` guards
-  - `axios.ts` — configures `OpenAPI.TOKEN` as an async function reading from localStorage (not a static value)
-  - `schemas.ts` — `paginationSearchSchema` (Zod) validates `page`, `size`, `q`, `sort`, `filter` URL params with defaults; used by all paginated routes
-  - `utils.ts` — includes `parseUTCDate` (handles UTC timestamps missing 'Z' suffix), `formatRelativeTime`, `slugify`
-  - `cropImage.ts` — client-side image crop/rotate/flip for profile photo upload, returns a Blob
+  - `_layout/` — user-facing pages: `bookings.tsx`, `favourites.tsx`, `profile.tsx`. ADMIN, TOP_MANAGEMENT, and MAINTENANCE roles see only "My Account" in the profile sidebar (Bookings and Favourites hidden).
+  - `vehicles/` — public vehicle listing (`index.tsx`), detail (`$id/index.tsx`), and booking form (`$id/book.tsx`). The booking form is a **4-step flow**: date selection → T&C review → Stripe payment (`PaymentForm.tsx`) → receipt (`DigitalReceipt.tsx`). Accepts `?pickup=` and `?return=` search params; calculates cost client-side using `rental_rate` and `discount`.
+  - `admin/_layout.tsx` — admin layout. Guards: authenticated + role is `ADMIN`, `TOP_MANAGEMENT`, or `MAINTENANCE`. MAINTENANCE users are redirected to `/admin/maintenance` if they attempt any other admin path.
+  - `admin/_layout/` — admin pages: `dashboard.tsx`, `vehicles.tsx`, `bookings.tsx`, `transactions.tsx`, `maintenance.tsx` (CRUD + status transitions; "Mark Completed" opens a remark dialog, other transitions fire immediately).
+- `components/Layout/` — `AppHeader.tsx` (role-aware dropdown: ADMIN/TOP_MANAGEMENT see "System Management" link, MAINTENANCE sees "Maintenance" link), `Navbar.tsx` (MAINTENANCE role shows Home + Maintenance only; CUSTOMER shows full public nav), `ProfileSidebar.tsx` (filters out Bookings/Favourites for non-CUSTOMER roles), `AdminSidebar.tsx` (MAINTENANCE role sees only a Maintenance nav item).
+- `hooks/` — `useAuth` exports `isAdmin`, `isManagement`, `isUser`, `isMaintenance` boolean flags derived from `user.role`. Other hooks: `useDataTableHandlers` (pagination/sorting/search synced to URL params), `useDebounce` (500ms), `useCustomToast`, `useCopyToClipboard`, `useMobile`.
+- `lib/` — `react-query.ts` exports `queryClient` used for prefetching in `beforeLoad` guards. `axios.ts` configures `OpenAPI.TOKEN` as an async function reading from localStorage. `schemas.ts` exports `paginationSearchSchema` (Zod) used by all paginated routes. `utils.ts` includes `parseUTCDate` (handles UTC timestamps missing 'Z' suffix), `formatRelativeTime`, and `slugify`.
+- `utils.ts` (root-level, aliased as `@/utils`) — shared helpers: `handleError` (binds to `showErrorToast` via `.bind()` for TanStack Query `onError` callbacks), `getInitials` (avatar initials from full name), `cleanObject` (strips null/undefined/empty-string keys before sending to API).
+- `utils/cropImage.ts` — canvas-based image crop helper used in profile photo editing with `react-easy-crop`.
 
 **State management**: TanStack Query for server state. The `queryClient` is exported from `lib/react-query` and used for prefetching in route `beforeLoad` guards.
 
-**API client usage**: Import generated service classes from `@/client`, e.g. `UserControllerService.getCurrentUser()`. The client is configured with axios and uses `VITE_API_URL` env var (defaults to `http://localhost:8081`).
+**API client usage**: Import generated service classes from `@/client`, e.g. `UserControllerService.getCurrentUser()`. Configured with `VITE_API_URL` env var (defaults to `http://localhost:8081`).
 
-**Currency**: Prices are in Malaysian Ringgit (RM). `rental_rate` and `discounted_price` fields are `BigDecimal` on the backend; displayed as `RM X.XX` in the UI.
+**Currency**: Malaysian Ringgit (RM). `rental_rate` and `discounted_price` are `BigDecimal` on the backend.
 
-**Animations**: `framer-motion` is used for page transitions and step animations (e.g., booking form steps). Use `AnimatePresence` + `motion.*` components for consistent enter/exit transitions.
+**Animations**: `framer-motion` for page transitions and step animations. Use `AnimatePresence` + `motion.*` for consistent enter/exit transitions.
 
 ### Auth Flow
 
 1. JWT token stored in localStorage
-2. `isLoggedIn()` checks token presence (client-side)
+2. `isLoggedIn()` checks token presence (client-side only)
 3. Route `beforeLoad` guards redirect to `/login?next=<path>` if not authenticated
-4. Admin routes additionally fetch `/api/v1/users/me` to verify role server-side
+4. Admin layout fetches `/api/v1/users/me` via `queryClient.ensureQueryData` to verify role server-side; network failure redirects to login (try/catch wraps only the fetch, not the redirect/notFound throws)
 5. Backend auto-logs out user on failed `/me` fetch (token expired/invalid)
 
 ### File Uploads
 
-Files are stored in `uploads/` at the project root. Backend serves them statically at `/uploads/**`. `FileStorageService` handles saving/deleting files. The upload directory is configurable via `app.upload-dir` in `application.properties` (default: `../uploads` relative to JAR).
-
-### Maintenance Module
-
-`maintenance/` — fully implemented: `MaintenanceController` exposes admin-only CRUD at `/api/v1/admin/maintenance`. `MaintenanceStatus` enum tracks record lifecycle. Records are linked to vehicles; admins can filter by status or vehicleId. Frontend admin page at `admin/_layout/maintenance.tsx`.
+Files are stored in `uploads/` at the project root. Backend serves them statically at `/uploads/**`. `FileStorageService` handles saving/deleting files. Configurable via `app.upload-dir` in `application.properties` (default: `../uploads` relative to JAR).
 
 ### Schema-Only Features (Not Yet Implemented)
 
-The Flyway migrations define tables for one future feature that has **no backend Java code** (no controllers, services, or repositories):
-
-- **Feedback & Damage Reports** — `feedbacks` + `damage_reports` tables (V6 migration)
+- **Feedback & Damage Reports** — `feedbacks` + `damage_reports` tables (V6 migration), no backend Java code yet.
 
 ### Environment Variables
 
@@ -167,6 +174,6 @@ STRIPE_PUBLISHABLE_KEY=pk_test_...
 ```
 
 **Backend** dev defaults (in `application.properties`):
-- MySQL: `localhost:3306/rent_ease`, credentials `root`/`root`
+- MySQL: `localhost:3306/rentease_db`, credentials `root`/`root`
 - JWT expiration: `259200000` ms (3 days)
 - Upload dir: `../uploads` (relative to JAR, override with `app.upload-dir`)

@@ -44,6 +44,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/webhooks/stripe").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/api/v1/admin/maintenance/**").hasAnyRole("ADMIN", "MAINTENANCE")
+                .requestMatchers("/api/v1/admin/dashboard/**").hasAnyRole("ADMIN", "TOP_MANAGEMENT")
+                .requestMatchers("/api/v1/admin/reports/**").hasAnyRole("ADMIN", "TOP_MANAGEMENT")
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )

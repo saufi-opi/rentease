@@ -1,4 +1,4 @@
-import { Car, ClipboardList, LayoutDashboard, Receipt, Wrench } from "lucide-react"
+import { BarChart2, Car, ClipboardList, LayoutDashboard, Receipt, Wrench } from "lucide-react"
 
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar"
 import useAuth from "@/hooks/useAuth"
@@ -17,6 +17,7 @@ export function AdminSidebar() {
     { icon: Wrench, title: "Maintenance", path: "/admin/maintenance" },
     { icon: ClipboardList, title: "All Bookings", path: "/admin/bookings" },
     { icon: Receipt, title: "Transactions", path: "/admin/transactions" },
+    { icon: BarChart2, title: "Reports", path: "/admin/reports" },
   ]
 
   const maintenanceOnlyItems: NavItemConfig[] = [

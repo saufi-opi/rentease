@@ -26,6 +26,7 @@ import { Route as VehiclesIdIndexRouteImport } from './routes/vehicles/$id/index
 import { Route as VehiclesIdBookRouteImport } from './routes/vehicles/$id/book'
 import { Route as AdminLayoutVehiclesRouteImport } from './routes/admin/_layout/vehicles'
 import { Route as AdminLayoutTransactionsRouteImport } from './routes/admin/_layout/transactions'
+import { Route as AdminLayoutReportsRouteImport } from './routes/admin/_layout/reports'
 import { Route as AdminLayoutMaintenanceRouteImport } from './routes/admin/_layout/maintenance'
 import { Route as AdminLayoutDashboardRouteImport } from './routes/admin/_layout/dashboard'
 import { Route as AdminLayoutBookingsRouteImport } from './routes/admin/_layout/bookings'
@@ -110,6 +111,11 @@ const AdminLayoutTransactionsRoute = AdminLayoutTransactionsRouteImport.update({
   path: '/transactions',
   getParentRoute: () => AdminLayoutRoute,
 } as any)
+const AdminLayoutReportsRoute = AdminLayoutReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminLayoutRoute,
+} as any)
 const AdminLayoutMaintenanceRoute = AdminLayoutMaintenanceRouteImport.update({
   id: '/maintenance',
   path: '/maintenance',
@@ -140,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/admin/bookings': typeof AdminLayoutBookingsRoute
   '/admin/dashboard': typeof AdminLayoutDashboardRoute
   '/admin/maintenance': typeof AdminLayoutMaintenanceRoute
+  '/admin/reports': typeof AdminLayoutReportsRoute
   '/admin/transactions': typeof AdminLayoutTransactionsRoute
   '/admin/vehicles': typeof AdminLayoutVehiclesRoute
   '/vehicles/$id/book': typeof VehiclesIdBookRoute
@@ -157,6 +164,7 @@ export interface FileRoutesByTo {
   '/admin/bookings': typeof AdminLayoutBookingsRoute
   '/admin/dashboard': typeof AdminLayoutDashboardRoute
   '/admin/maintenance': typeof AdminLayoutMaintenanceRoute
+  '/admin/reports': typeof AdminLayoutReportsRoute
   '/admin/transactions': typeof AdminLayoutTransactionsRoute
   '/admin/vehicles': typeof AdminLayoutVehiclesRoute
   '/vehicles/$id/book': typeof VehiclesIdBookRoute
@@ -179,6 +187,7 @@ export interface FileRoutesById {
   '/admin/_layout/bookings': typeof AdminLayoutBookingsRoute
   '/admin/_layout/dashboard': typeof AdminLayoutDashboardRoute
   '/admin/_layout/maintenance': typeof AdminLayoutMaintenanceRoute
+  '/admin/_layout/reports': typeof AdminLayoutReportsRoute
   '/admin/_layout/transactions': typeof AdminLayoutTransactionsRoute
   '/admin/_layout/vehicles': typeof AdminLayoutVehiclesRoute
   '/vehicles/$id/book': typeof VehiclesIdBookRoute
@@ -200,6 +209,7 @@ export interface FileRouteTypes {
     | '/admin/bookings'
     | '/admin/dashboard'
     | '/admin/maintenance'
+    | '/admin/reports'
     | '/admin/transactions'
     | '/admin/vehicles'
     | '/vehicles/$id/book'
@@ -217,6 +227,7 @@ export interface FileRouteTypes {
     | '/admin/bookings'
     | '/admin/dashboard'
     | '/admin/maintenance'
+    | '/admin/reports'
     | '/admin/transactions'
     | '/admin/vehicles'
     | '/vehicles/$id/book'
@@ -238,6 +249,7 @@ export interface FileRouteTypes {
     | '/admin/_layout/bookings'
     | '/admin/_layout/dashboard'
     | '/admin/_layout/maintenance'
+    | '/admin/_layout/reports'
     | '/admin/_layout/transactions'
     | '/admin/_layout/vehicles'
     | '/vehicles/$id/book'
@@ -368,6 +380,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLayoutTransactionsRouteImport
       parentRoute: typeof AdminLayoutRoute
     }
+    '/admin/_layout/reports': {
+      id: '/admin/_layout/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminLayoutReportsRouteImport
+      parentRoute: typeof AdminLayoutRoute
+    }
     '/admin/_layout/maintenance': {
       id: '/admin/_layout/maintenance'
       path: '/maintenance'
@@ -411,6 +430,7 @@ interface AdminLayoutRouteChildren {
   AdminLayoutBookingsRoute: typeof AdminLayoutBookingsRoute
   AdminLayoutDashboardRoute: typeof AdminLayoutDashboardRoute
   AdminLayoutMaintenanceRoute: typeof AdminLayoutMaintenanceRoute
+  AdminLayoutReportsRoute: typeof AdminLayoutReportsRoute
   AdminLayoutTransactionsRoute: typeof AdminLayoutTransactionsRoute
   AdminLayoutVehiclesRoute: typeof AdminLayoutVehiclesRoute
 }
@@ -419,6 +439,7 @@ const AdminLayoutRouteChildren: AdminLayoutRouteChildren = {
   AdminLayoutBookingsRoute: AdminLayoutBookingsRoute,
   AdminLayoutDashboardRoute: AdminLayoutDashboardRoute,
   AdminLayoutMaintenanceRoute: AdminLayoutMaintenanceRoute,
+  AdminLayoutReportsRoute: AdminLayoutReportsRoute,
   AdminLayoutTransactionsRoute: AdminLayoutTransactionsRoute,
   AdminLayoutVehiclesRoute: AdminLayoutVehiclesRoute,
 }
