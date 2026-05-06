@@ -8,6 +8,7 @@ import com.rentease.backend.booking.model.BookingStatus;
 import com.rentease.backend.booking.repository.BookingRepository;
 import com.rentease.backend.common.exception.ConflictException;
 import com.rentease.backend.common.exception.ResourceNotFoundException;
+import com.rentease.backend.common.service.EmailService;
 import com.rentease.backend.maintenance.model.MaintenanceStatus;
 import com.rentease.backend.maintenance.repository.MaintenanceRepository;
 import com.rentease.backend.payment.model.Payment;
@@ -31,6 +32,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -43,6 +45,7 @@ public class BookingService {
     private final PaymentRepository paymentRepository;
     private final PaymentService paymentService;
     private final MaintenanceRepository maintenanceRepository;
+    private final EmailService emailService;
 
     @Transactional
     public BookingResponse createBooking(BookingRequest request) {
@@ -97,7 +100,12 @@ public class BookingService {
                 .confirmationRef(confirmationRef)
                 .build();
 
-        return mapToResponse(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+        emailService.sendBookingCreatedEmail(
+                customer.getEmail(), customer.getFullName(), saved.getConfirmationRef(),
+                vehicle.getBrand(), vehicle.getModel(),
+                saved.getStartDate(), saved.getEndDate(), saved.getTotalCost());
+        return mapToResponse(saved);
     }
 
     public List<BookingResponse> getMyBookings() {
@@ -131,12 +139,13 @@ public class BookingService {
             throw new RuntimeException("Only PENDING, PAYMENT_FAILED, or CONFIRMED bookings can be cancelled");
         }
 
-        // Auto-refund if there is a PAID payment
-        paymentRepository.findByBookingId(id).ifPresent(payment -> {
-            if (payment.getStatus() == PaymentStatus.PAID) {
-                paymentService.refund(payment.getId(), null);
-            }
-        });
+        // Auto-refund if there is a PAID payment — capture amount for the email
+        BigDecimal refundAmount = null;
+        Optional<Payment> paymentOpt = paymentRepository.findByBookingId(id);
+        if (paymentOpt.isPresent() && paymentOpt.get().getStatus() == PaymentStatus.PAID) {
+            refundAmount = paymentOpt.get().getAmount();
+            paymentService.refund(paymentOpt.get().getId(), null);
+        }
 
         booking.setStatus(BookingStatus.CANCELLED);
 
@@ -148,6 +157,10 @@ public class BookingService {
         }
 
         bookingRepository.save(booking);
+
+        emailService.sendBookingCancelledEmail(
+                booking.getCustomer().getEmail(), booking.getCustomer().getFullName(),
+                booking.getConfirmationRef(), "Cancelled by customer", refundAmount);
     }
 
     // ── Admin ──────────────────────────────────────────────────────────────
@@ -222,7 +235,16 @@ public class BookingService {
         }
 
         booking.setStatus(newStatus);
-        return mapToResponse(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+
+        if (newStatus == BookingStatus.ACTIVE || newStatus == BookingStatus.COMPLETED) {
+            User customer = booking.getCustomer();
+            emailService.sendBookingStatusChangedEmail(
+                    customer.getEmail(), customer.getFullName(),
+                    booking.getConfirmationRef(), newStatus.name());
+        }
+
+        return mapToResponse(saved);
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────

@@ -144,7 +144,20 @@ export type LoginData = {
     requestBody: LoginRequest;
 };
 
-export type LoginResponse = (AuthToken);
+export type LoginResponse = {
+    accessToken?: string | null;
+    tokenType?: string | null;
+    expiresIn?: number | null;
+    requiresOtp?: boolean | null;
+    email?: string | null;
+};
+
+export type VerifyOtpData = {
+    requestBody: {
+        email: string;
+        otp: string;
+    };
+};
 
 export type UpdateBookingStatusData = {
     id: string;

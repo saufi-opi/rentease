@@ -4,10 +4,7 @@ import com.rentease.backend.auth.model.AuthToken;
 import com.rentease.backend.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -17,7 +14,12 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public AuthToken login(@Valid @RequestBody LoginRequest request) {
+    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request.getEmail(), request.getPassword());
+    }
+
+    @PostMapping("/verify-otp")
+    public AuthToken verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
+        return authService.verifyOtp(request.getEmail(), request.getOtp());
     }
 }

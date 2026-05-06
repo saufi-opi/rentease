@@ -9,6 +9,7 @@ import com.rentease.backend.vehicle.model.Vehicle;
 import com.rentease.backend.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,12 @@ public class DataInitializer implements CommandLineRunner {
     private final VehicleRepository vehicleRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${app.admin.email}")
+    private String adminEmail;
+
+    @Value("${app.admin.password}")
+    private String adminPassword;
+
     @Override
     public void run(String... args) throws Exception {
         initializeAdminUser();
@@ -31,21 +38,33 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initializeAdminUser() {
-        String adminEmail = "admin@example.com";
-        if (userRepository.findByEmail(adminEmail).isEmpty()) {
-            log.info("Creating default admin user...");
-
-            User admin = User.builder()
-                    .email(adminEmail)
-                    .password(passwordEncoder.encode("aaAA1234"))
-                    .status(UserStatus.ACTIVE)
-                    .role(Role.ADMIN)
-                    .fullName("System Admin")
-                    .build();
-
-            userRepository.save(admin);
-            log.info("Default admin user created successfully.");
+        // Admin already exists with the configured email — nothing to do
+        if (userRepository.findByEmail(adminEmail).isPresent()) {
+            return;
         }
+
+        // Email may have changed in .env: find the seeded admin by its fixed marker
+        userRepository.findFirstByRoleAndFullName(Role.ADMIN, "System Admin").ifPresentOrElse(
+            existing -> {
+                log.info("Updating system admin email to configured value...");
+                existing.setEmail(adminEmail);
+                existing.setPassword(passwordEncoder.encode(adminPassword));
+                userRepository.save(existing);
+                log.info("System admin updated successfully.");
+            },
+            () -> {
+                log.info("Creating default admin user...");
+                User admin = User.builder()
+                        .email(adminEmail)
+                        .password(passwordEncoder.encode(adminPassword))
+                        .status(UserStatus.ACTIVE)
+                        .role(Role.ADMIN)
+                        .fullName("System Admin")
+                        .build();
+                userRepository.save(admin);
+                log.info("Default admin user created successfully.");
+            }
+        );
     }
 
     private void initializeVehicles() {

@@ -39,6 +39,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.POST, "/api/v1/users/signup").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/verify-otp").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/vehicles/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/webhooks/stripe").permitAll()

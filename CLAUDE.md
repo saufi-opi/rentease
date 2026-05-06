@@ -60,27 +60,28 @@ docker compose up -d
 
 Located at `backend/src/main/java/com/rentease/backend/`:
 
-- `auth/` — JWT authentication: `AuthController` (login), `JwtTokenProvider`, `JwtAuthenticationFilter`, `SecurityConfig`
-- `user/` — User management: CRUD, role-based access. Role enum: `CUSTOMER`, `ADMIN`, `TOP_MANAGEMENT`, `MAINTENANCE`.
+- `auth/` — JWT authentication and MFA: `AuthController` (login + OTP verify), `JwtTokenProvider`, `JwtAuthenticationFilter`, `SecurityConfig`, `OtpService` (generates 6-digit codes, persists to `otp_codes` table, sends via `EmailService`), `OtpCode` entity.
+- `user/` — User management: `UserController` (self-service: signup, profile, photo), `AdminUserController` (admin CRUD at `/api/v1/admin/users`), `UserService`, `UserSpecification` (JPA Criteria for search/filter). Role enum: `CUSTOMER`, `ADMIN`, `TOP_MANAGEMENT`, `MAINTENANCE`. `UserStatus` enum: `ACTIVE`, `INACTIVE`, `SUSPENDED`. Admins can update a user's `role` and `status` via `PATCH /api/v1/admin/users/{id}`.
 - `vehicle/` — Vehicle CRUD with pagination/filtering via `VehicleSpecification` (JPA Criteria). Supports filtering by type, brand, keyword, price range, and date-range availability (subquery excludes vehicles with overlapping non-cancelled bookings). Key enums: `AvailabilityStatus` (`AVAILABLE`, `BOOKED`, `UNDER_MAINTENANCE`), `TransmissionType`, `VehicleFeature`. The `discount` field is a percentage (DECIMAL 5,2); booking cost = `rental_rate * (1 - discount/100) * days` (calculated client-side).
 - `booking/` — Booking lifecycle (see state machine below). Bookings include a `confirmationRef` UUID prefixed `RB-`. Customers can cancel their own bookings; admins see all with pagination and status filter. `BookingExpirationJob` (scheduled every hour) auto-cancels PENDING bookings with no payment after 30 minutes and voids the Stripe PaymentIntent.
 - `payment/` — Stripe payment integration (see Payment Flow below).
 - `favourite/` — User favourites: `Favourite` entity (`user_favourites` table, V13 migration). Endpoints: `POST /api/v1/favourites/{vehicleId}` (toggle), `GET /api/v1/favourites`, `GET /api/v1/favourites/ids`. All require authentication.
 - `maintenance/` — Maintenance record CRUD. See Maintenance Module section below.
 - `report/` — Business intelligence layer. `ReportController` exposes two endpoints: `GET /api/v1/admin/dashboard/stats` (KPI cards + charts for the dashboard) and `GET /api/v1/admin/reports/summary?startDate=&endDate=` (full report with period-over-period comparison). `ReportService` computes all metrics in Java from aggregated DB queries. DTOs live in `report/dto/`: `DashboardStatsResponse`, `ReportSummaryResponse`, `MonthlyDataPoint` (record), `StatusCount` (record), `TopCustomerItem` (record), `TopVehicleItem` (record), `PaymentMethodBreakdown` (record), `UtilizationItem` (record).
-- `common/` — Cross-cutting: `GlobalExceptionHandler`, `FileStorageService` (local `uploads/` dir), `DataInitializer` (seeds default admin on startup), `WebMvcConfig` (CORS, static file serving)
+- `common/` — Cross-cutting: `GlobalExceptionHandler`, `FileStorageService` (local `uploads/` dir), `DataInitializer` (seeds default admin on startup — email/password read from `ADMIN_EMAIL`/`ADMIN_PASSWORD` env vars; updates the existing "System Admin" record if the email changes), `WebMvcConfig` (CORS, static file serving), `EmailService` (async HTML email via JavaMailSender; sends: OTP login codes, booking created, payment confirmed, booking cancelled with optional refund amount, booking status changes for ACTIVE and COMPLETED transitions).
 
 **API base path**: `/api/v1/`
 
 **Security rules** (from `SecurityConfig`, evaluated top-to-bottom):
-- Public: `POST /api/v1/users/signup`, `POST /api/v1/auth/login`, `GET /api/v1/vehicles/**`, `GET /uploads/**`, Swagger UI, Stripe webhook
+- Public: `POST /api/v1/users/signup`, `POST /api/v1/auth/login`, `POST /api/v1/auth/verify-otp`, `GET /api/v1/vehicles/**`, `GET /uploads/**`, Swagger UI, Stripe webhook
+- `GET /api/v1/admin/users`, `GET /api/v1/admin/users/**` — requires `ADMIN` or `TOP_MANAGEMENT` role
 - `/api/v1/admin/maintenance/**` — requires `ADMIN` or `MAINTENANCE` role (more specific rule placed before the general admin rule)
 - `/api/v1/admin/dashboard/**` — requires `ADMIN` or `TOP_MANAGEMENT` role
 - `/api/v1/admin/reports/**` — requires `ADMIN` or `TOP_MANAGEMENT` role
 - `/api/v1/admin/**` — requires `ADMIN` role only
 - Everything else requires authentication
 
-**Database migrations** are in `backend/src/main/resources/db/migration/` (Flyway). Latest: V15 adds `remark` column to `maintenance_records`. JPA is set to `ddl-auto=validate` — all schema changes must go through Flyway migrations.
+**Database migrations** are in `backend/src/main/resources/db/migration/` (Flyway). Latest: V16 creates `otp_codes` table. JPA is set to `ddl-auto=validate` — all schema changes must go through Flyway migrations.
 
 ### Role System
 
@@ -90,7 +91,7 @@ Four roles in `Role.java`:
 |------|--------|
 | `CUSTOMER` | Public + authenticated user routes (`/profile`, `/bookings`, `/favourites`) |
 | `ADMIN` | All admin routes (`/api/v1/admin/**`), full sidebar |
-| `TOP_MANAGEMENT` | Same frontend access as ADMIN |
+| `TOP_MANAGEMENT` | Same frontend access as ADMIN; read-only user list access |
 | `MAINTENANCE` | `/api/v1/admin/maintenance/**` only; frontend redirected to `/admin/maintenance` |
 
 **Self-registration** at `/api/v1/users/signup` accepts `CUSTOMER` or `MAINTENANCE` as the `role` field. Any other value (or omitted) defaults to `CUSTOMER`. `ADMIN` and `TOP_MANAGEMENT` cannot be self-registered.
@@ -127,15 +128,16 @@ Located at `frontend/src/`:
 - `client/` — API client generated from OpenAPI spec via `@hey-api/openapi-ts`. Regenerate with `npm run generate-client` (backend must be running). When manually extending `sdk.gen.ts`/`types.gen.ts` before regenerating, the additions must match what the backend actually exposes or they'll be overwritten. **Important**: use `browseVehicles()` (hits public `GET /api/v1/vehicles`) not `listVehicles()` (hits `GET /api/v1/admin/vehicles`) anywhere a non-ADMIN role needs to fetch vehicles.
 - `routes/` — TanStack Router file-based routing:
   - `index.tsx` — public landing page
-  - `login.tsx`, `signup.tsx` — public pages. Signup includes role selector (Customer / Maintenance Staff).
+  - `login.tsx`, `signup.tsx` — public pages. Signup includes role selector (Customer / Maintenance Staff). Login handles the 2-step OTP flow: on `requiresOtp: true` response, renders an OTP input step and calls `POST /api/v1/auth/verify-otp`.
   - `_layout.tsx` — authenticated user layout (header + profile sidebar). Guards with `isLoggedIn()`.
   - `_layout/` — user-facing pages: `bookings.tsx`, `favourites.tsx`, `profile.tsx`. ADMIN, TOP_MANAGEMENT, and MAINTENANCE roles see only "My Account" in the profile sidebar (Bookings and Favourites hidden).
-  - `vehicles/` — public vehicle listing (`index.tsx`), detail (`$id/index.tsx`), and booking form (`$id/book.tsx`). The booking form is a **4-step flow**: date selection → T&C review → Stripe payment (`PaymentForm.tsx`) → receipt (`DigitalReceipt.tsx`). Accepts `?pickup=` and `?return=` search params; calculates cost client-side using `rental_rate` and `discount`.
+  - `vehicles/` — public vehicle listing (`index.tsx`), detail (`$id/index.tsx`), and booking form (`$id/book.tsx`). `$id.tsx` is a thin `<Outlet />` layout wrapper for the nested vehicle routes. The booking form is a **4-step flow**: date selection → T&C review → Stripe payment (`PaymentForm.tsx`) → receipt (`DigitalReceipt.tsx`). Accepts `?pickup=` and `?return=` search params; calculates cost client-side using `rental_rate` and `discount`.
+  - `admin/index.tsx` — redirects `/admin` → `/admin/dashboard`.
   - `admin/_layout.tsx` — admin layout. Guards: authenticated + role is `ADMIN`, `TOP_MANAGEMENT`, or `MAINTENANCE`. MAINTENANCE users are redirected to `/admin/maintenance` if they attempt any other admin path.
-  - `admin/_layout/` — admin pages: `dashboard.tsx` (KPI cards + recharts visualizations, fetches `/api/v1/admin/dashboard/stats`), `vehicles.tsx`, `bookings.tsx`, `transactions.tsx`, `maintenance.tsx` (CRUD + status transitions; "Mark Completed" opens a remark dialog, other transitions fire immediately), `reports.tsx` (date-range filtered report with charts, top customers/vehicles tables, PDF + Excel export via jsPDF/xlsx).
+  - `admin/_layout/` — admin pages: `dashboard.tsx` (KPI cards + recharts visualizations, fetches `/api/v1/admin/dashboard/stats`), `vehicles.tsx`, `bookings.tsx`, `transactions.tsx`, `maintenance.tsx` (CRUD + status transitions; "Mark Completed" opens a remark dialog, other transitions fire immediately), `reports.tsx` (date-range filtered report with charts, top customers/vehicles tables, PDF + Excel export via jsPDF/xlsx), `users.tsx` (user management: search/filter by role and status, update role/status, delete; accessible to ADMIN and TOP_MANAGEMENT).
 - `components/Layout/` — `AppHeader.tsx` (role-aware dropdown: ADMIN/TOP_MANAGEMENT see "System Management" link, MAINTENANCE sees "Maintenance" link), `Navbar.tsx` (MAINTENANCE role shows Home + Maintenance only; CUSTOMER shows full public nav), `ProfileSidebar.tsx` (filters out Bookings/Favourites for non-CUSTOMER roles).
-- `components/Sidebar/` — `AdminSidebar.tsx` (MAINTENANCE role sees only a Maintenance nav item; ADMIN/TOP_MANAGEMENT see Dashboard, Vehicles, Bookings, Transactions, Maintenance, Reports).
-- `hooks/` — `useAuth` exports `isAdmin`, `isManagement`, `isUser`, `isMaintenance` boolean flags derived from `user.role`. Other hooks: `useDataTableHandlers` (pagination/sorting/search synced to URL params), `useDebounce` (500ms), `useCustomToast`, `useCopyToClipboard`, `useMobile`.
+- `components/Sidebar/` — `AdminSidebar.tsx` (MAINTENANCE role sees only a Maintenance nav item; ADMIN/TOP_MANAGEMENT see Dashboard, Vehicles, Bookings, Transactions, Maintenance, Reports, Users).
+- `hooks/` — `useAuth` exports `isAdmin`, `isManagement`, `isUser`, `isMaintenance` boolean flags derived from `user.role`. Also exports `loginMutation` and `verifyOtpMutation` used by `login.tsx`. Other hooks: `useDataTableHandlers` (pagination/sorting/search synced to URL params), `useDebounce` (500ms), `useCustomToast`, `useCopyToClipboard`, `useMobile`.
 - `lib/` — `react-query.ts` exports `queryClient` used for prefetching in `beforeLoad` guards. `axios.ts` configures `OpenAPI.TOKEN` as an async function reading from localStorage. `schemas.ts` exports `paginationSearchSchema` (Zod) used by all paginated routes. `utils.ts` includes `parseUTCDate` (handles UTC timestamps missing 'Z' suffix), `formatRelativeTime`, and `slugify`.
 - `utils.ts` (root-level, aliased as `@/utils`) — shared helpers: `handleError` (binds to `showErrorToast` via `.bind()` for TanStack Query `onError` callbacks), `getInitials` (avatar initials from full name), `cleanObject` (strips null/undefined/empty-string keys before sending to API).
 - `utils/cropImage.ts` — canvas-based image crop helper used in profile photo editing with `react-easy-crop`.
@@ -152,11 +154,14 @@ Located at `frontend/src/`:
 
 ### Auth Flow
 
-1. JWT token stored in localStorage
-2. `isLoggedIn()` checks token presence (client-side only)
-3. Route `beforeLoad` guards redirect to `/login?next=<path>` if not authenticated
-4. Admin layout fetches `/api/v1/users/me` via `queryClient.ensureQueryData` to verify role server-side; network failure redirects to login (try/catch wraps only the fetch, not the redirect/notFound throws)
-5. Backend auto-logs out user on failed `/me` fetch (token expired/invalid)
+Login is a two-step flow for privileged roles:
+
+1. `POST /api/v1/auth/login` — if the user's role is `ADMIN` or `TOP_MANAGEMENT`, the response contains `{requiresOtp: true, email}` and a 6-digit OTP is sent to their email via `EmailService`. No token is issued yet.
+2. `POST /api/v1/auth/verify-otp` — validates the OTP (5-minute expiry, single-use, stored in `otp_codes` table). Returns JWT on success.
+3. `CUSTOMER` and `MAINTENANCE` roles skip OTP and receive a JWT immediately on successful login.
+4. JWT token stored in localStorage; `isLoggedIn()` checks token presence (client-side only).
+5. Route `beforeLoad` guards redirect to `/login?next=<path>` if not authenticated.
+6. Admin layout fetches `/api/v1/users/me` via `queryClient.ensureQueryData` to verify role server-side; network failure redirects to login (try/catch wraps only the fetch, not the redirect/notFound throws).
 
 ### File Uploads
 
@@ -177,9 +182,20 @@ VITE_API_URL=http://localhost:8081
 ```
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Gmail SMTP (use an App Password, not your account password)
+MAIL_HOST=smtp.gmail.com
+MAIL_USERNAME=your-sender@gmail.com
+MAIL_PASSWORD=your-app-password
+
+# Superadmin credentials — DataInitializer updates the DB record on startup if changed
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=aaAA1234
 ```
 
 **Backend** dev defaults (in `application.properties`):
 - MySQL: `localhost:3306/rentease_db`, credentials `root`/`root`
 - JWT expiration: `259200000` ms (3 days)
+- OTP expiry: 5 minutes (`app.otp.expiry-minutes`)
 - Upload dir: `../uploads` (relative to JAR, override with `app.upload-dir`)

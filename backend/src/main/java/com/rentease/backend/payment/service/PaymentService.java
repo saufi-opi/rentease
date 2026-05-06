@@ -4,12 +4,14 @@ import com.rentease.backend.auth.security.SecurityUtils;
 import com.rentease.backend.booking.model.Booking;
 import com.rentease.backend.booking.model.BookingStatus;
 import com.rentease.backend.booking.repository.BookingRepository;
-import com.rentease.backend.vehicle.model.AvailabilityStatus;
 import com.rentease.backend.common.exception.ResourceNotFoundException;
+import com.rentease.backend.common.service.EmailService;
 import com.rentease.backend.payment.controller.*;
 import com.rentease.backend.payment.model.Payment;
 import com.rentease.backend.payment.model.PaymentStatus;
 import com.rentease.backend.payment.repository.PaymentRepository;
+import com.rentease.backend.user.model.User;
+import com.rentease.backend.vehicle.model.AvailabilityStatus;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
@@ -36,6 +38,7 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
+    private final EmailService emailService;
 
     @Value("${stripe.secret-key}")
     private String stripeSecretKey;
@@ -158,6 +161,11 @@ public class PaymentService {
                 booking.setStatus(BookingStatus.CONFIRMED);
                 bookingRepository.save(booking);
             }
+
+            User customer = booking.getCustomer();
+            emailService.sendPaymentConfirmedEmail(
+                    customer.getEmail(), customer.getFullName(),
+                    booking.getConfirmationRef(), payment.getAmount(), payment.getPaymentMethod());
 
             return mapToResponse(payment);
 

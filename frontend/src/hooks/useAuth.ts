@@ -56,16 +56,34 @@ const useAuth = () => {
   })
 
   const login = async (data: LoginRequest) => {
-    const response = await AuthControllerService.login({
-      requestBody: data,
-    })
+    const response = await AuthControllerService.login({ requestBody: data })
+    if (response.requiresOtp) {
+      return { requiresOtp: true as const, email: response.email! }
+    }
     if (response.accessToken) {
       setAccessToken(response.accessToken)
     }
+    return { requiresOtp: false as const }
   }
 
   const loginMutation = useMutation({
     mutationFn: login,
+    onSuccess: (result) => {
+      if (!result.requiresOtp) {
+        queryClient.invalidateQueries({ queryKey: ["currentUser"] })
+      }
+    },
+    onError: handleError.bind(showErrorToast),
+  })
+
+  const verifyOtpMutation = useMutation({
+    mutationFn: async (data: { email: string; otp: string }) => {
+      const token = await AuthControllerService.verifyOtp({ requestBody: data })
+      if (token.accessToken) {
+        setAccessToken(token.accessToken)
+      }
+      return token
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["currentUser"] })
     },
@@ -75,6 +93,7 @@ const useAuth = () => {
   return {
     signUpMutation,
     loginMutation,
+    verifyOtpMutation,
     logout,
     user,
     isAdmin,

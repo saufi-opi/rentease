@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { LoginData, LoginResponse, UpdateBookingStatusData, UpdateBookingStatusResponse, GetMyBookingsResponse, CreateBookingData, CreateBookingResponse, GetBookingByIdData, GetBookingByIdResponse, CancelBookingData, CancelBookingResponse, GetAllBookingsData, GetAllBookingsResponse, UploadImageData, UploadImageResponse, RegisterData, RegisterResponse, GetCurrentUserResponse, DeleteProfileResponse, UpdateProfileData, UpdateProfileResponse, UpdateVehicleData, UpdateVehicleResponse, DeleteVehicleData, DeleteVehicleResponse, ListVehiclesData, ListVehiclesResponse, CreateVehicleData, CreateVehicleResponse, BrowseVehiclesData, BrowseVehiclesResponse, GetVehicleData, GetVehicleResponse, GetVehicleSuggestionsResponse, ToggleFavouriteData, ToggleFavouriteResponse, GetFavouritesResponse, GetFavouriteIdsResponse, GetPopularVehiclesData, GetPopularVehiclesResponse, CreateMaintenanceData, CreateMaintenanceResponse, GetAllMaintenanceData, GetAllMaintenanceResponse, GetMaintenanceByIdData, GetMaintenanceByIdResponse, UpdateMaintenanceStatusData, UpdateMaintenanceStatusResponse } from './types.gen';
+import type { AuthToken, LoginData, LoginResponse, VerifyOtpData, UpdateBookingStatusData, UpdateBookingStatusResponse, GetMyBookingsResponse, CreateBookingData, CreateBookingResponse, GetBookingByIdData, GetBookingByIdResponse, CancelBookingData, CancelBookingResponse, GetAllBookingsData, GetAllBookingsResponse, UploadImageData, UploadImageResponse, RegisterData, RegisterResponse, GetCurrentUserResponse, DeleteProfileResponse, UpdateProfileData, UpdateProfileResponse, UpdateVehicleData, UpdateVehicleResponse, DeleteVehicleData, DeleteVehicleResponse, ListVehiclesData, ListVehiclesResponse, CreateVehicleData, CreateVehicleResponse, BrowseVehiclesData, BrowseVehiclesResponse, GetVehicleData, GetVehicleResponse, GetVehicleSuggestionsResponse, ToggleFavouriteData, ToggleFavouriteResponse, GetFavouritesResponse, GetFavouriteIdsResponse, GetPopularVehiclesData, GetPopularVehiclesResponse, CreateMaintenanceData, CreateMaintenanceResponse, GetAllMaintenanceData, GetAllMaintenanceResponse, GetMaintenanceByIdData, GetMaintenanceByIdResponse, UpdateMaintenanceStatusData, UpdateMaintenanceStatusResponse } from './types.gen';
 
 export class AuthControllerService {
     /**
@@ -16,6 +16,15 @@ export class AuthControllerService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/auth/login',
+            body: data.requestBody,
+            mediaType: 'application/json'
+        });
+    }
+
+    public static verifyOtp(data: VerifyOtpData): CancelablePromise<AuthToken> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/auth/verify-otp',
             body: data.requestBody,
             mediaType: 'application/json'
         });
